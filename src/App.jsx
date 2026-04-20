@@ -1,5 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IOSDevice } from './IOSDevice.jsx';
+
+function useIsMobile(breakpoint = 500) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia(`(max-width: ${breakpoint}px)`).matches
+      : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
 import {
   ScreenWelcome, ScreenPhone, ScreenOTP, ScreenProfile, ScreenLocation, ScreenSuccess,
 } from './screens.jsx';
@@ -50,14 +65,15 @@ export default function App() {
 
   const currentBrowse = browseStack[browseStack.length - 1];
   const currentAdmin = adminStack[adminStack.length - 1];
+  const isMobile = useIsMobile();
 
   return (
     <div style={{
-      minHeight: '100vh', width: '100%',
+      minHeight: '100dvh', width: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '40px 20px', boxSizing: 'border-box',
+      padding: isMobile ? 0 : '40px 20px', boxSizing: 'border-box',
     }}>
-      <IOSDevice>
+      <IOSDevice fullscreen={isMobile}>
         {flow === 'signup' && seq[step] === 'welcome' && (
           <ScreenWelcome onNext={next} onLogin={() => go(1)} />
         )}

@@ -36,35 +36,49 @@ function IOSStatusBar({ time = '9:41' }) {
   );
 }
 
-export function IOSDevice({ children, width = 402, height = 874 }) {
+export function IOSDevice({ children, width = 402, height = 874, fullscreen = false }) {
+  const containerStyle = fullscreen
+    ? {
+        width: '100%', height: '100dvh',
+        position: 'relative', background: '#F2F2F7',
+        overflow: 'hidden',
+        fontFamily: '-apple-system, system-ui, sans-serif',
+        WebkitFontSmoothing: 'antialiased',
+      }
+    : {
+        width, height, borderRadius: 48, overflow: 'hidden',
+        position: 'relative', background: '#F2F2F7',
+        boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+        fontFamily: '-apple-system, system-ui, sans-serif',
+        WebkitFontSmoothing: 'antialiased',
+      };
+
   return (
-    <div style={{
-      width, height, borderRadius: 48, overflow: 'hidden',
-      position: 'relative', background: '#F2F2F7',
-      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
-      fontFamily: '-apple-system, system-ui, sans-serif',
-      WebkitFontSmoothing: 'antialiased',
-    }}>
-      <div style={{
-        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
-        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
-      }} />
+    <div style={containerStyle}>
+      {!fullscreen && (
+        <div style={{
+          position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+          width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+        }} />
+      )}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
         <IOSStatusBar />
       </div>
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
       </div>
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
-        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-        paddingBottom: 8, pointerEvents: 'none',
-      }}>
+      {!fullscreen && (
         <div style={{
-          width: 139, height: 5, borderRadius: 100,
-          background: 'rgba(0,0,0,0.25)',
-        }} />
-      </div>
+          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+          height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+          paddingBottom: 8, pointerEvents: 'none',
+        }}>
+          <div style={{
+            width: 139, height: 5, borderRadius: 100,
+            background: 'rgba(0,0,0,0.25)',
+          }} />
+        </div>
+      )}
     </div>
   );
 }
