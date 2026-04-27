@@ -142,6 +142,91 @@ export function useMessages(conversationId: string | undefined) {
   });
 }
 
+export type StartConversationInput = {
+  listingId: string;
+  listingTitle: string;
+  listingPriceAed: number;
+  peerId: string;
+  peerName: string;
+  peerInitial: string | null;
+  text: string;
+};
+
+export function useStartConversation() {
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+
+  return (input: StartConversationInput): string | null => {
+    if (!me) return null;
+    const text = input.text.trim();
+    if (!text) return null;
+
+    const conversations = qc.getQueryData<Conversation[]>(['conversations']) ?? [];
+    const existing = conversations.find(
+      (c) => c.listing.id === input.listingId && c.peer.id === input.peerId,
+    );
+
+    const now = new Date();
+    const conversationId = existing?.id ?? `cnv_local_${now.getTime()}`;
+
+    const newMessage: Message = {
+      id: `msg_${now.getTime()}`,
+      conversationId,
+      fromUserId: me.id,
+      fromMe: true,
+      createdAt: now.toISOString(),
+      kind: 'text',
+      text,
+      offer: null,
+    };
+
+    qc.setQueryData<Message[]>(['messages', conversationId], (current) => {
+      const list = current ?? [];
+      return [...list, newMessage];
+    });
+
+    if (existing) {
+      qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+        const list = current ?? [];
+        return list.map((c) =>
+          c.id === conversationId
+            ? {
+                ...c,
+                lastMessage: { text, createdAt: now.toISOString(), fromMe: true, relativeTime: 'now' },
+                unread: false,
+              }
+            : c,
+        );
+      });
+    } else {
+      const newConv: Conversation = {
+        id: conversationId,
+        peer: {
+          id: input.peerId,
+          displayName: input.peerName,
+          avatarUrl: null,
+          avatarInitial: input.peerInitial,
+          isOnline: false,
+        },
+        listing: {
+          id: input.listingId,
+          title: input.listingTitle,
+          priceAed: input.listingPriceAed,
+        },
+        lastMessage: { text, createdAt: now.toISOString(), fromMe: true, relativeTime: 'now' },
+        unread: false,
+        hasOffer: false,
+      };
+      qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+        const list = current ?? [];
+        return [newConv, ...list];
+      });
+    }
+
+    return conversationId;
+  };
+}
+
 export function useSendMessage() {
   const qc = useQueryClient();
   const { data: me } = useMe();

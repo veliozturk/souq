@@ -14,7 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../theme';
 import { QUICK_REPLIES } from '../data/quickReplies';
 import { SparkleIcon, MicIcon, SendIcon, ShieldIcon } from '../components/icons';
-import { useListing } from '../api/queries';
+import { useListing, useStartConversation } from '../api/queries';
 import { demoHue } from '../utils/demoHue';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -23,13 +23,33 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SendMessage'>;
 export default function SendMessage({ navigation, route }: Props) {
   const { itemId } = route.params;
   const { data: listing } = useListing(itemId);
+  const startConversation = useStartConversation();
 
   const [message, setMessage] = useState('');
   const [activeReply, setActiveReply] = useState<number | null>(null);
   const insets = useSafeAreaInsets();
 
   const dismiss = () => navigation.goBack();
-  const canSend = message.trim().length > 0;
+  const canSend = message.trim().length > 0 && !!listing;
+
+  const handleSend = () => {
+    if (!canSend || !listing) return;
+    const conversationId = startConversation({
+      listingId: listing.id,
+      listingTitle: listing.title.original,
+      listingPriceAed: listing.priceAed,
+      peerId: listing.seller.id,
+      peerName: listing.seller.name,
+      peerInitial: listing.seller.avatarInitial,
+      text: message,
+    });
+    if (!conversationId) return;
+    navigation.goBack();
+    navigation.navigate('Main', {
+      screen: 'InboxTab',
+      params: { screen: 'Chat', params: { threadId: conversationId } },
+    });
+  };
 
   const sellerFirstName = listing?.seller.name.split(' ')[0] ?? '';
   const itemTitle = listing?.title.original ?? '';
@@ -117,7 +137,7 @@ export default function SendMessage({ navigation, route }: Props) {
                 <Text style={s.saveBtnText}>Save for later</Text>
               </Pressable>
               <Pressable
-                onPress={dismiss}
+                onPress={handleSend}
                 disabled={!canSend}
                 style={[s.sendBtn, !canSend && s.sendBtnDisabled]}>
                 <SendIcon size={14} color="#fff" />
