@@ -192,7 +192,14 @@ export default function ItemDetail({ navigation, route }: Props) {
           <Text style={s.messageBtnText}>Message</Text>
         </Pressable>
         {listing.acceptOffers ? (
-          <Pressable style={s.offerBtn}>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('MakeOffer', {
+                itemId: listing.id,
+                sellerId: listing.seller.id,
+              })
+            }
+            style={s.offerBtn}>
             <Text style={s.offerBtnText}>Make offer</Text>
           </Pressable>
         ) : null}

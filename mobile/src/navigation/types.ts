@@ -56,4 +56,5 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabsParamList>;
   SendMessage: { itemId: string; sellerId: string };
+  MakeOffer: { itemId: string; sellerId: string };
 };

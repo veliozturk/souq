@@ -227,6 +227,100 @@ export function useStartConversation() {
   };
 }
 
+export type MakeOfferInput = {
+  listingId: string;
+  listingTitle: string;
+  listingPriceAed: number;
+  peerId: string;
+  peerName: string;
+  peerInitial: string | null;
+  offerPriceAed: number;
+  pickupNote: string | null;
+};
+
+export function useMakeOffer() {
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+
+  return (input: MakeOfferInput): string | null => {
+    if (!me || input.offerPriceAed <= 0) return null;
+
+    const conversations = qc.getQueryData<Conversation[]>(['conversations']) ?? [];
+    const existing = conversations.find(
+      (c) => c.listing.id === input.listingId && c.peer.id === input.peerId,
+    );
+
+    const now = new Date();
+    const conversationId = existing?.id ?? `cnv_local_${now.getTime()}`;
+    const offerId = `ofr_local_${now.getTime()}`;
+
+    const offerMessage: Message = {
+      id: `msg_${now.getTime()}`,
+      conversationId,
+      fromUserId: me.id,
+      fromMe: true,
+      createdAt: now.toISOString(),
+      kind: 'offer',
+      text: null,
+      offer: {
+        id: offerId,
+        priceAed: input.offerPriceAed,
+        listedPriceAed: input.listingPriceAed,
+        pickupNote: input.pickupNote,
+        state: 'new',
+      },
+    };
+
+    qc.setQueryData<Message[]>(['messages', conversationId], (current) => {
+      const list = current ?? [];
+      return [...list, offerMessage];
+    });
+
+    const lastMessageText = `Offered AED ${input.offerPriceAed.toLocaleString()}`;
+
+    if (existing) {
+      qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+        const list = current ?? [];
+        return list.map((c) =>
+          c.id === conversationId
+            ? {
+                ...c,
+                lastMessage: { text: lastMessageText, createdAt: now.toISOString(), fromMe: true, relativeTime: 'now' },
+                hasOffer: true,
+                unread: false,
+              }
+            : c,
+        );
+      });
+    } else {
+      const newConv: Conversation = {
+        id: conversationId,
+        peer: {
+          id: input.peerId,
+          displayName: input.peerName,
+          avatarUrl: null,
+          avatarInitial: input.peerInitial,
+          isOnline: false,
+        },
+        listing: {
+          id: input.listingId,
+          title: input.listingTitle,
+          priceAed: input.listingPriceAed,
+        },
+        lastMessage: { text: lastMessageText, createdAt: now.toISOString(), fromMe: true, relativeTime: 'now' },
+        unread: false,
+        hasOffer: true,
+      };
+      qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+        const list = current ?? [];
+        return [newConv, ...list];
+      });
+    }
+
+    return conversationId;
+  };
+}
+
 export function useSendMessage() {
   const qc = useQueryClient();
   const { data: me } = useMe();

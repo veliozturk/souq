@@ -4,6 +4,7 @@ import { useAuthStub } from '../auth/AuthStub';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
 import SendMessage from '../modals/SendMessage';
+import MakeOffer from '../modals/MakeOffer';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -17,6 +18,14 @@ export function RootNavigator() {
           <Stack.Screen
             name="SendMessage"
             component={SendMessage}
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="MakeOffer"
+            component={MakeOffer}
             options={{
               presentation: 'transparentModal',
               animation: 'slide_from_bottom',
