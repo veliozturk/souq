@@ -5,8 +5,7 @@ import { theme, FONT } from '../../theme';
 import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { CloseIcon, PlusIcon, InfoIcon } from '../../components/icons';
-import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
+import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPhotos'>;
@@ -15,7 +14,8 @@ const TOTAL_SLOTS = 9;
 
 export default function ListingPhotos({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const PHOTO_FILLS = isDemoMode() ? LISTING_PRESET.photoTints : [];
+  const { draft } = useListingDraft();
+  const PHOTO_FILLS = draft.photoTints;
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>

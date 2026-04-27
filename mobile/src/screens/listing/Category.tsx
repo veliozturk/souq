@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -16,8 +15,7 @@ import {
   ChevronRightIcon,
 } from '../../components/icons';
 import { useCategories, useMe } from '../../api/queries';
-import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
+import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 import type { ComponentType } from 'react';
 
@@ -37,10 +35,11 @@ const CONDITIONS = ['Brand new', 'Like new', 'Good', 'Fair'];
 export default function ListingCategory({ navigation }: Props) {
   const { data: categories = [] } = useCategories();
   const { data: me } = useMe();
-  const initialCat = isDemoMode() ? LISTING_PRESET.categoryId : null;
-  const initialCond = isDemoMode() ? LISTING_PRESET.conditionLabel : null;
-  const [cat, setCat] = useState<string | null>(initialCat);
-  const [cond, setCond] = useState<string | null>(initialCond);
+  const { draft, patch } = useListingDraft();
+  const cat = draft.categoryId;
+  const cond = draft.conditionLabel;
+  const setCat = (v: string) => patch({ categoryId: v });
+  const setCond = (v: string) => patch({ conditionLabel: v });
   const insets = useSafeAreaInsets();
   const pickupNbh = me?.homeNeighborhood?.name.en ?? null;
 

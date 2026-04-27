@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   ScrollView,
   View,
@@ -16,7 +15,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { Toggle } from '../../components/Toggle';
 import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
+import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPrice'>;
@@ -24,8 +23,11 @@ type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPrice'>;
 const demoMode = isDemoMode();
 
 export default function ListingPrice({ navigation }: Props) {
-  const [price, setPrice] = useState(demoMode ? LISTING_PRESET.priceAed : '');
-  const [acceptOffers, setAcceptOffers] = useState(demoMode ? LISTING_PRESET.acceptOffers : true);
+  const { draft, patch } = useListingDraft();
+  const price = draft.priceAed;
+  const acceptOffers = draft.acceptOffers;
+  const setPrice = (v: string) => patch({ priceAed: v });
+  const setAcceptOffers = (v: boolean) => patch({ acceptOffers: v });
   const insets = useSafeAreaInsets();
 
   return (

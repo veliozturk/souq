@@ -12,6 +12,7 @@ import {
   ChevronRightIcon,
 } from '../../components/icons';
 import { useDrafts } from '../../api/queries';
+import { useListingDraft } from './ListingDraftContext';
 import type {
   ListingStackParamList,
   MainTabsParamList,
@@ -32,8 +33,12 @@ function draftMeta(d: { photoCount: number; hasPrice: boolean }): string {
 export default function ListingStart({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { data: drafts = [] } = useDrafts();
+  const { reset } = useListingDraft();
 
-  const closeFlow = () => navigation.getParent<any>()?.navigate('HomeTab');
+  const closeFlow = () => {
+    reset();
+    navigation.getParent<any>()?.navigate('HomeTab');
+  };
 
   return (
     <View style={s.root}>

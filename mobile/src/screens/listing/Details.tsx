@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   ScrollView,
   View,
@@ -17,8 +16,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { FieldLabel } from '../../components/FieldLabel';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { MicStandIcon, SparkleIcon } from '../../components/icons';
-import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
+import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingDetails'>;
@@ -26,10 +24,11 @@ type Props = NativeStackScreenProps<ListingStackParamList, 'ListingDetails'>;
 const VOICE_BARS = [10, 18, 24, 14, 8];
 
 export default function ListingDetails({ navigation }: Props) {
-  const [title, setTitle] = useState(isDemoMode() ? LISTING_PRESET.title : '');
-  const [description, setDescription] = useState(
-    isDemoMode() ? LISTING_PRESET.description : '',
-  );
+  const { draft, patch } = useListingDraft();
+  const title = draft.title;
+  const description = draft.description;
+  const setTitle = (v: string) => patch({ title: v });
+  const setDescription = (v: string) => patch({ description: v });
   const insets = useSafeAreaInsets();
 
   return (

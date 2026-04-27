@@ -10,9 +10,9 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { Toggle } from '../../components/Toggle';
 import { PinIcon, BoltIcon } from '../../components/icons';
-import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
-import { useMe } from '../../api/queries';
+import { useMe, useCategories } from '../../api/queries';
+import { demoHue } from '../../utils/demoHue';
+import { useListingDraft } from './ListingDraftContext';
 import type {
   ListingStackParamList,
   MainTabsParamList,
@@ -26,13 +26,19 @@ type Props = CompositeScreenProps<
 export default function ListingPreview({ navigation }: Props) {
   const [boost, setBoost] = useState(true);
   const insets = useSafeAreaInsets();
-  const demoMode = isDemoMode();
+  const { draft, reset } = useListingDraft();
   const { data: me } = useMe();
+  const { data: categories = [] } = useCategories();
   const sellerName = me?.displayName.split(' ')[0] ?? 'You';
   const sellerInitial = me?.avatarInitial ?? sellerName[0] ?? 'Y';
   const nbhName = me?.homeNeighborhood?.name.en ?? 'Dubai';
+  const categoryName = categories.find((c) => c.id === draft.categoryId)?.name.en;
+  const locLine = categoryName ? `${nbhName} · ${categoryName}` : nbhName;
+  const coverTint = draft.photoTints[0] ?? demoHue('preview-fallback');
+  const photoCount = draft.photoTints.length;
 
   const finish = () => {
+    reset();
     navigation.getParent<any>()?.navigate('HomeTab');
     navigation.popToTop();
   };
@@ -50,27 +56,27 @@ export default function ListingPreview({ navigation }: Props) {
         <Text style={s.subtitle}>Here's how buyers will see it.</Text>
 
         <View style={s.previewCard}>
-          <View style={[s.previewImage, { backgroundColor: demoMode ? LISTING_PRESET.photoTints[2] : theme.blueSoft }]}>
-            {demoMode ? (
+          <View style={[s.previewImage, { backgroundColor: coverTint }]}>
+            {draft.conditionLabel ? (
               <View style={s.condBadge}>
-                <Text style={s.condBadgeText}>{LISTING_PRESET.conditionLabel.toUpperCase()}</Text>
+                <Text style={s.condBadgeText}>{draft.conditionLabel.toUpperCase()}</Text>
               </View>
             ) : null}
-            {demoMode ? (
+            {photoCount > 0 ? (
               <View style={s.counterBadge}>
-                <Text style={s.counterText}>1 / {LISTING_PRESET.photoTints.length}</Text>
+                <Text style={s.counterText}>1 / {photoCount}</Text>
               </View>
             ) : null}
           </View>
           <View style={s.previewBody}>
             <View style={s.previewTopRow}>
-              <Text style={s.previewPrice}>AED {demoMode ? LISTING_PRESET.priceAed : '—'}</Text>
+              <Text style={s.previewPrice}>AED {draft.priceAed || '—'}</Text>
               <Text style={s.previewMeta}>Posted just now</Text>
             </View>
-            <Text style={s.previewTitle}>{demoMode ? LISTING_PRESET.title : 'Your listing'}</Text>
+            <Text style={s.previewTitle}>{draft.title || 'Your listing'}</Text>
             <View style={s.previewLocRow}>
               <PinIcon size={12} color={theme.blue} />
-              <Text style={s.previewLoc}>{nbhName}</Text>
+              <Text style={s.previewLoc}>{locLine}</Text>
             </View>
 
             <View style={s.previewSeller}>
