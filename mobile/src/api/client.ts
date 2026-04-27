@@ -3,7 +3,7 @@ import { findMock } from './mocks';
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5127';
 
 type MockMode = 'off' | 'fallback' | 'only';
-const MOCK_MODE: MockMode = (process.env.EXPO_PUBLIC_USE_MOCKS as MockMode) ?? 'off';
+const MOCK_MODE: MockMode = (process.env.EXPO_PUBLIC_USE_MOCKS as MockMode) ?? 'fallback';
 
 export function isDemoMode(): boolean {
   return MOCK_MODE !== 'off';

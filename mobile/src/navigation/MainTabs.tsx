@@ -9,6 +9,7 @@ import { ListingStack } from './ListingStack';
 import { InboxStack } from './InboxStack';
 import { MeStack } from './MeStack';
 import Saved from '../screens/Saved';
+import { useConversations } from '../api/queries';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 
@@ -20,14 +21,25 @@ const TAB_LABELS: Record<keyof MainTabsParamList, string> = {
   MeTab: 'Me',
 };
 
+function useTabBadges(): Partial<Record<keyof MainTabsParamList, number>> {
+  const { data: conversations = [] } = useConversations();
+  const inboxUnread = conversations.filter((c) => c.unread).length;
+  return {
+    InboxTab: inboxUnread > 0 ? inboxUnread : undefined,
+  };
+}
+
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const badges = useTabBadges();
   return (
     <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {state.routes.map((route, index) => {
         const focused = state.index === index;
-        const label = TAB_LABELS[route.name as keyof MainTabsParamList] ?? route.name;
+        const name = route.name as keyof MainTabsParamList;
+        const label = TAB_LABELS[name] ?? route.name;
         const isSell = route.name === 'SellTab';
+        const badge = badges[name];
         return (
           <Pressable
             key={route.key}
@@ -43,7 +55,14 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                 <Text style={s.sellPillText}>+</Text>
               </View>
             ) : (
-              <Text style={[s.label, focused && s.labelFocused]}>{label}</Text>
+              <View style={s.labelWrap}>
+                <Text style={[s.label, focused && s.labelFocused]}>{label}</Text>
+                {badge !== undefined ? (
+                  <View style={s.badge}>
+                    <Text style={s.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+                  </View>
+                ) : null}
+              </View>
             )}
             {isSell ? <Text style={[s.label, focused && s.labelFocused]}>{label}</Text> : null}
           </Pressable>
@@ -104,5 +123,25 @@ const s = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: 22,
     lineHeight: 24,
+  },
+  labelWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  badge: {
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.orange,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontFamily: FONT.bold,
+    fontSize: 10,
+    color: '#fff',
+    lineHeight: 13,
   },
 });
