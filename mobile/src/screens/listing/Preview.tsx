@@ -10,7 +10,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { Toggle } from '../../components/Toggle';
 import { PinIcon, BoltIcon } from '../../components/icons';
-import { useMe, useCategories } from '../../api/queries';
+import { useCategories, useCreateListing, useMe, useSaveDraft } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import { useListingDraft } from './ListingDraftContext';
 import type {
@@ -29,6 +29,9 @@ export default function ListingPreview({ navigation }: Props) {
   const { draft, reset } = useListingDraft();
   const { data: me } = useMe();
   const { data: categories = [] } = useCategories();
+  const createListing = useCreateListing();
+  const saveDraft = useSaveDraft();
+  const canPublish = !!draft.title.trim() && !!draft.priceAed && !!draft.categoryId;
   const sellerName = me?.displayName.split(' ')[0] ?? 'You';
   const sellerInitial = me?.avatarInitial ?? sellerName[0] ?? 'Y';
   const nbhName = me?.homeNeighborhood?.name.en ?? 'Dubai';
@@ -37,10 +40,21 @@ export default function ListingPreview({ navigation }: Props) {
   const coverTint = draft.photoTints[0] ?? demoHue('preview-fallback');
   const photoCount = draft.photoTints.length;
 
-  const finish = () => {
+  const closeFlow = () => {
     reset();
     navigation.getParent<any>()?.navigate('HomeTab');
     navigation.popToTop();
+  };
+
+  const publish = () => {
+    if (!canPublish) return;
+    createListing(draft);
+    closeFlow();
+  };
+
+  const saveAsDraft = () => {
+    saveDraft(draft);
+    closeFlow();
   };
 
   return (
@@ -49,7 +63,7 @@ export default function ListingPreview({ navigation }: Props) {
         step={4}
         total={5}
         onBack={() => navigation.goBack()}
-        onSkip={finish}
+        onSkip={closeFlow}
       />
       <ScrollView style={s.flex} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={s.title}>Looks good?</Text>
@@ -103,12 +117,12 @@ export default function ListingPreview({ navigation }: Props) {
         </View>
       </ScrollView>
       <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-        <PrimaryBtn variant="orange" onPress={finish}>
+        <PrimaryBtn variant="orange" onPress={publish} disabled={!canPublish}>
           Publish listing
         </PrimaryBtn>
         <View style={s.draftRow}>
           <Text style={s.draftRowText}>Or </Text>
-          <Pressable onPress={finish}>
+          <Pressable onPress={saveAsDraft}>
             <Text style={s.draftRowLink}>save as draft</Text>
           </Pressable>
         </View>

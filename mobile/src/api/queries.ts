@@ -8,6 +8,7 @@ import type {
   DraftListingDetail,
   FavoriteListing,
   ListingDetail,
+  ListingDraftBody,
   ListingFilters,
   ListingStats,
   ListingSummary,
@@ -202,6 +203,110 @@ export function useOffers(state?: OfferState) {
     queryKey: ['offers', state ?? 'all'],
     queryFn: () => apiGet<Offer[]>(path),
   });
+}
+
+export function useCreateListing() {
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+
+  return (draft: ListingDraftBody): string | null => {
+    if (!me) return null;
+    const id = `lst_local_${Date.now()}`;
+    const now = new Date().toISOString();
+    const priceNum = parseInt(draft.priceAed, 10) || 0;
+    const nbh = me.homeNeighborhood ?? {
+      id: 'nbh_unknown',
+      slug: 'unknown',
+      name: { en: 'Dubai', ar: 'دبي' },
+    };
+
+    const summary: ListingSummary = {
+      id,
+      title: { original: draft.title, en: draft.title, ar: draft.title },
+      priceAed: priceNum,
+      previousPriceAed: null,
+      publishedAt: now,
+      categoryId: draft.categoryId ?? 'cat_furniture',
+      neighborhood: nbh,
+      seller: {
+        id: me.id,
+        handle: me.handle,
+        name: me.displayName,
+        avatarUrl: me.avatarUrl,
+        avatarInitial: me.avatarInitial,
+        isVerified: me.isVerified,
+        joinedYear: new Date().getFullYear(),
+      },
+      coverPhoto: null,
+      isBoosted: false,
+      sellerStats: { viewsCount: 0, messagesCount: 0, pendingOffersCount: 0 },
+    };
+
+    const detail: ListingDetail = {
+      ...summary,
+      description: { original: draft.description, en: draft.description, ar: draft.description },
+      acceptOffers: draft.acceptOffers,
+      hasPickup: true,
+      pickupNote: me.homeNeighborhood ? `Pickup from ${me.homeNeighborhood.name.en}` : null,
+      status: 'active',
+      category: {
+        id: draft.categoryId ?? 'cat_furniture',
+        slug: 'unknown',
+        name: { en: '', ar: '' },
+      },
+      condition: {
+        id: 'cond_unknown',
+        slug: 'unknown',
+        name: { en: draft.conditionLabel ?? 'Like new', ar: 'كالجديد' },
+      },
+      neighborhood: { ...nbh, centerLat: null, centerLng: null },
+      photos: [],
+      boostEndsAt: null,
+    };
+
+    qc.setQueryData<ListingSummary[]>(['my-listings', 'active'], (current) => {
+      const list = current ?? [];
+      return [summary, ...list];
+    });
+
+    qc.setQueryData<ListingDetail>(['listing', id], detail);
+
+    qc.setQueryData<Me>(['me'], (current) =>
+      current
+        ? { ...current, counts: { ...current.counts, activeListings: current.counts.activeListings + 1 } }
+        : current,
+    );
+
+    return id;
+  };
+}
+
+export function useSaveDraft() {
+  const qc = useQueryClient();
+
+  return (draft: ListingDraftBody): string => {
+    const id = `drf_local_${Date.now()}`;
+    const updatedAt = new Date().toISOString();
+
+    const summary: DraftListing = {
+      id,
+      title: draft.title || null,
+      photoCount: draft.photoTints.length,
+      hasPrice: draft.priceAed.length > 0,
+      updatedAt,
+    };
+
+    const detail: DraftListingDetail = { ...summary, ...draft };
+
+    qc.setQueryData<DraftListing[]>(['drafts'], (current) => {
+      const list = current ?? [];
+      return [summary, ...list];
+    });
+
+    qc.setQueryData<DraftListingDetail>(['draft', id], detail);
+
+    return id;
+  };
 }
 
 export function useDecideOffer() {
