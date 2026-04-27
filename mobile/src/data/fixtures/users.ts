@@ -29,4 +29,10 @@ export const USERS_BY_ID: Record<string, UserDetail> = {
   usr_omar: userDetail(DEMO_SELLERS.omar, null, 0, DEMO_NEIGHBORHOODS.marina, null),
   usr_layla: userDetail(DEMO_SELLERS.layla, 4.6, 4, DEMO_NEIGHBORHOODS.marina, '~2h'),
   usr_ahmed: userDetail(DEMO_SELLERS.ahmed, null, 1, DEMO_NEIGHBORHOODS.jlt, null),
+  usr_hassan: userDetail(DEMO_SELLERS.hassan, null, 0, DEMO_NEIGHBORHOODS.businessBay, null),
+  usr_noura: userDetail(DEMO_SELLERS.noura, 4.8, 5, DEMO_NEIGHBORHOODS.jbr, '~3h'),
+  usr_sara: userDetail(DEMO_SELLERS.sara, null, 2, DEMO_NEIGHBORHOODS.businessBay, null),
+  usr_rashid: userDetail(DEMO_SELLERS.rashid, 4.7, 9, DEMO_NEIGHBORHOODS.jumeirah, '~2h'),
+  usr_fatima: userDetail(DEMO_SELLERS.fatima, 4.9, 7, DEMO_NEIGHBORHOODS.marina, '~1h'),
+  usr_yusuf: userDetail(DEMO_SELLERS.yusuf, null, 1, DEMO_NEIGHBORHOODS.downtown, null),
 };

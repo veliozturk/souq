@@ -13,6 +13,7 @@ import {
   MessageBubbleIcon,
 } from '../../components/icons';
 import { useListing } from '../../api/queries';
+import { demoHue } from '../../utils/demoHue';
 import type { BrowseStackParamList, RootStackParamList } from '../../navigation/types';
 
 type Props = CompositeScreenProps<
@@ -69,7 +70,7 @@ export default function ItemDetail({ navigation, route }: Props) {
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        <View style={s.gallery}>
+        <View style={[s.gallery, { backgroundColor: demoHue(listing.id) }]}>
           {cover ? (
             <Image source={{ uri: cover.url }} style={StyleSheet.absoluteFill} />
           ) : null}
@@ -215,7 +216,6 @@ const s = StyleSheet.create({
   },
   gallery: {
     height: 320,
-    backgroundColor: '#D4B896',
   },
   dotsRow: {
     position: 'absolute',

@@ -8,6 +8,7 @@ import {
   SEARCH_LISTINGS_FURNITURE,
   SELLER_LISTINGS_AISHA,
 } from '../data/fixtures/listings';
+import { buildListingDetail } from '../data/fixtures/listingDetails';
 import { LISTING_STATS_BY_ID } from '../data/fixtures/listingStats';
 import { ME } from '../data/fixtures/me';
 import { MESSAGES_BY_CONVERSATION } from '../data/fixtures/messages';
@@ -48,6 +49,13 @@ const prefix: { match: (p: string) => boolean; handle: Handler }[] = [
     handle: (path) => {
       const id = path.split('/')[3];
       return USERS_BY_ID[id] ?? null;
+    },
+  },
+  {
+    match: (p) => /^\/api\/listings\/[^/]+$/.test(p),
+    handle: (path) => {
+      const id = path.split('/')[3];
+      return buildListingDetail(id);
     },
   },
 ];
