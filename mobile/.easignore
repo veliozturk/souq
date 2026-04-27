@@ -1,0 +1,19 @@
+# Files outside mobile/ shouldn't be uploaded to EAS Build.
+# .easignore extends .gitignore — list things to exclude from the build context.
+
+# Local-only logs / caches
+*.log
+.DS_Store
+.expo/
+dist/
+build/
+ios/
+android/
+
+# Test / story files (none today, but cheap to future-proof)
+**/__tests__/**
+**/__mocks__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.stories.ts
+**/*.stories.tsx
