@@ -1,30 +1,72 @@
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Alert, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { BoltIcon } from '../../components/icons';
-import { useListing, useListingStats } from '../../api/queries';
+import {
+  useBoostListing,
+  useDeleteListing,
+  useListing,
+  useListingStats,
+  useUpdateListingStatus,
+} from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import type { MeStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'ListingAdmin'>;
-
-const SECONDARY_BTNS = [
-  { label: 'Pause', color: theme.ink },
-  { label: 'Mark sold', color: theme.ink },
-  { label: 'Delete', color: '#C53030' },
-];
 
 export default function ListingAdmin({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { id } = route.params;
   const { data: listing } = useListing(id);
   const { data: stats } = useListingStats(id);
+  const updateStatus = useUpdateListingStatus();
+  const deleteListing = useDeleteListing();
+  const boostListing = useBoostListing();
 
   const title = listing?.title.original ?? '';
   const priceAed = listing?.priceAed;
-  const status = listing?.status?.toUpperCase() ?? 'ACTIVE';
+  const status = (listing?.status ?? 'active') as 'active' | 'paused' | 'sold';
+  const isActive = status === 'active';
+
+  const STATUS_BADGE: Record<typeof status, { label: string; bg: string; fg: string }> = {
+    active: { label: 'ACTIVE', bg: '#10B98122', fg: '#058A5C' },
+    paused: { label: 'PAUSED', bg: theme.line, fg: theme.inkDim },
+    sold: { label: 'SOLD', bg: theme.blueSoft, fg: theme.blue },
+  };
+  const badge = STATUS_BADGE[status];
+
+  const togglePause = () => {
+    updateStatus(id, status === 'paused' ? 'active' : 'paused');
+  };
+
+  const markSold = () => {
+    updateStatus(id, 'sold');
+    navigation.goBack();
+  };
+
+  const confirmDelete = () => {
+    Alert.alert('Delete listing?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          deleteListing(id);
+          navigation.goBack();
+        },
+      },
+    ]);
+  };
+
+  const boost = () => boostListing(id);
+
+  const secondaryBtns = [
+    { label: status === 'paused' ? 'Resume' : 'Pause', color: theme.ink, onPress: togglePause },
+    { label: 'Mark sold', color: theme.ink, onPress: markSold },
+    { label: 'Delete', color: '#C53030', onPress: confirmDelete },
+  ];
 
   const statCards = stats
     ? [
@@ -48,8 +90,8 @@ export default function ListingAdmin({ navigation, route }: Props) {
         <View style={s.summary}>
           <View style={[s.thumb, { backgroundColor: demoHue(id) }]} />
           <View style={{ flex: 1 }}>
-            <View style={s.statusBadge}>
-              <Text style={s.statusBadgeText}>● {status}</Text>
+            <View style={[s.statusBadge, { backgroundColor: badge.bg }]}>
+              <Text style={[s.statusBadgeText, { color: badge.fg }]}>● {badge.label}</Text>
             </View>
             <Text style={s.title}>{title}</Text>
             {priceAed != null ? (
@@ -117,9 +159,14 @@ export default function ListingAdmin({ navigation, route }: Props) {
         ) : null}
 
         <View style={s.primaryRow}>
-          <Pressable style={s.boostBtn}>
+          <Pressable
+            onPress={boost}
+            disabled={!isActive || listing?.isBoosted}
+            style={[s.boostBtn, (!isActive || listing?.isBoosted) && s.boostBtnDisabled]}>
             <BoltIcon size={14} color="#fff" />
-            <Text style={s.boostBtnText}>Boost · 50 AED</Text>
+            <Text style={s.boostBtnText}>
+              {listing?.isBoosted ? 'Boosted' : 'Boost · 50 AED'}
+            </Text>
           </Pressable>
           <Pressable style={s.editBtn}>
             <Text style={s.editBtnText}>Edit</Text>
@@ -127,8 +174,8 @@ export default function ListingAdmin({ navigation, route }: Props) {
         </View>
 
         <View style={s.secondaryRow}>
-          {SECONDARY_BTNS.map((b) => (
-            <Pressable key={b.label} style={s.secondaryBtn}>
+          {secondaryBtns.map((b) => (
+            <Pressable key={b.label} onPress={b.onPress} style={s.secondaryBtn}>
               <Text style={[s.secondaryBtnText, { color: b.color }]}>{b.label}</Text>
             </Pressable>
           ))}
@@ -326,6 +373,9 @@ const s = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: 14,
     color: '#fff',
+  },
+  boostBtnDisabled: {
+    backgroundColor: '#C9D1D9',
   },
   editBtn: {
     flex: 1,

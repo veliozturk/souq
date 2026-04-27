@@ -460,6 +460,105 @@ export function useCreateListing() {
   };
 }
 
+type ListingStatusBucket = 'active' | 'paused' | 'sold';
+const LISTING_BUCKETS: ListingStatusBucket[] = ['active', 'paused', 'sold'];
+
+function bumpCount(counts: Me['counts'], status: ListingStatusBucket, delta: number): Me['counts'] {
+  const next = { ...counts };
+  if (status === 'active') next.activeListings = Math.max(0, next.activeListings + delta);
+  if (status === 'paused') next.inactiveListings = Math.max(0, next.inactiveListings + delta);
+  if (status === 'sold') next.soldListings = Math.max(0, next.soldListings + delta);
+  return next;
+}
+
+export function useUpdateListingStatus() {
+  const qc = useQueryClient();
+
+  return (id: string, newStatus: ListingStatusBucket) => {
+    let snapshot: ListingSummary | null = null;
+    let oldStatus: ListingStatusBucket | null = null;
+    for (const bucket of LISTING_BUCKETS) {
+      const list = qc.getQueryData<ListingSummary[]>(['my-listings', bucket]);
+      const found = list?.find((l) => l.id === id);
+      if (found) {
+        snapshot = found;
+        oldStatus = bucket;
+        break;
+      }
+    }
+
+    if (oldStatus === newStatus) return;
+
+    if (snapshot && oldStatus) {
+      qc.setQueryData<ListingSummary[]>(['my-listings', oldStatus], (current) =>
+        (current ?? []).filter((l) => l.id !== id),
+      );
+      qc.setQueryData<ListingSummary[]>(['my-listings', newStatus], (current) => {
+        const list = current ?? [];
+        return [snapshot!, ...list];
+      });
+    }
+
+    qc.setQueryData<ListingDetail>(['listing', id], (current) =>
+      current ? { ...current, status: newStatus } : current,
+    );
+
+    if (oldStatus) {
+      qc.setQueryData<Me>(['me'], (current) => {
+        if (!current) return current;
+        const counts = bumpCount(bumpCount(current.counts, oldStatus!, -1), newStatus, +1);
+        return { ...current, counts };
+      });
+    }
+  };
+}
+
+export function useDeleteListing() {
+  const qc = useQueryClient();
+
+  return (id: string) => {
+    let foundStatus: ListingStatusBucket | null = null;
+    for (const bucket of LISTING_BUCKETS) {
+      const list = qc.getQueryData<ListingSummary[]>(['my-listings', bucket]);
+      if (list?.some((l) => l.id === id)) {
+        foundStatus = bucket;
+        break;
+      }
+    }
+
+    for (const bucket of LISTING_BUCKETS) {
+      qc.setQueryData<ListingSummary[]>(['my-listings', bucket], (current) =>
+        (current ?? []).filter((l) => l.id !== id),
+      );
+    }
+
+    qc.removeQueries({ queryKey: ['listing', id] });
+
+    if (foundStatus) {
+      qc.setQueryData<Me>(['me'], (current) => {
+        if (!current) return current;
+        return { ...current, counts: bumpCount(current.counts, foundStatus!, -1) };
+      });
+    }
+  };
+}
+
+export function useBoostListing() {
+  const qc = useQueryClient();
+
+  return (id: string) => {
+    const endsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    qc.setQueryData<ListingDetail>(['listing', id], (current) =>
+      current ? { ...current, isBoosted: true, boostEndsAt: endsAt } : current,
+    );
+    for (const bucket of LISTING_BUCKETS) {
+      qc.setQueryData<ListingSummary[]>(['my-listings', bucket], (current) =>
+        (current ?? []).map((l) => (l.id === id ? { ...l, isBoosted: true } : l)),
+      );
+    }
+  };
+}
+
 export function useSaveDraft() {
   const qc = useQueryClient();
 
