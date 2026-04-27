@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet } from './client';
 import type {
   Category,
@@ -103,6 +104,26 @@ export function useFavorites() {
     queryKey: ['favorites'],
     queryFn: () => apiGet<FavoriteListing[]>('/api/me/favorites'),
   });
+}
+
+export function useFavoriteToggle() {
+  const qc = useQueryClient();
+  const { data: favorites = [] } = useFavorites();
+  const ids = useMemo(() => new Set(favorites.map((f) => f.id)), [favorites]);
+
+  const isFavorite = (id: string) => ids.has(id);
+
+  const toggle = (item: ListingSummary) => {
+    qc.setQueryData<FavoriteListing[]>(['favorites'], (current) => {
+      const list = current ?? [];
+      const has = list.some((f) => f.id === item.id);
+      if (has) return list.filter((f) => f.id !== item.id);
+      const entry: FavoriteListing = { ...item, favoritedAt: new Date().toISOString() };
+      return [entry, ...list];
+    });
+  };
+
+  return { isFavorite, toggle };
 }
 
 export function useConversations() {

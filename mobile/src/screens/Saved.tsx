@@ -2,12 +2,13 @@ import { ActivityIndicator, Image, ScrollView, View, Text, Pressable, StyleSheet
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme, FONT } from '../theme';
 import { HeartIcon } from '../components/icons';
-import { useFavorites } from '../api/queries';
+import { useFavorites, useFavoriteToggle } from '../api/queries';
 import { demoHue } from '../utils/demoHue';
 
 export default function Saved() {
   const insets = useSafeAreaInsets();
   const { data: favorites = [], isPending, isError, refetch } = useFavorites();
+  const { toggle } = useFavoriteToggle();
 
   return (
     <View style={s.root}>
@@ -41,9 +42,12 @@ export default function Saved() {
                   <View style={s.card}>
                     <View style={[s.cardImage, { backgroundColor: demoHue(it.id) }]}>
                       {thumb ? <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} /> : null}
-                      <View style={s.heartBtn}>
+                      <Pressable
+                        onPress={() => toggle(it)}
+                        hitSlop={8}
+                        style={s.heartBtn}>
                         <HeartIcon size={14} color={theme.orange} />
-                      </View>
+                      </Pressable>
                     </View>
                     <View style={s.cardBody}>
                       <Text style={s.cardPrice}>AED {it.priceAed.toLocaleString()}</Text>

@@ -12,8 +12,9 @@ import {
   VerifiedIcon,
   MessageBubbleIcon,
 } from '../../components/icons';
-import { useListing } from '../../api/queries';
+import { useFavoriteToggle, useListing } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
+import type { ListingSummary } from '../../api/types';
 import type { BrowseStackParamList, RootStackParamList } from '../../navigation/types';
 
 type Props = CompositeScreenProps<
@@ -24,6 +25,7 @@ type Props = CompositeScreenProps<
 export default function ItemDetail({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const listingQ = useListing(route.params.id);
+  const { isFavorite, toggle } = useFavoriteToggle();
   const listing = listingQ.data;
 
   if (listingQ.isPending) {
@@ -52,6 +54,24 @@ export default function ItemDetail({ navigation, route }: Props) {
       : null;
   const sellerInitial =
     listing.seller.avatarInitial ?? listing.seller.name.charAt(0).toUpperCase();
+  const summary: ListingSummary = {
+    id: listing.id,
+    title: listing.title,
+    priceAed: listing.priceAed,
+    previousPriceAed: listing.previousPriceAed,
+    publishedAt: listing.publishedAt,
+    categoryId: listing.category.id,
+    neighborhood: {
+      id: listing.neighborhood.id,
+      slug: listing.neighborhood.slug,
+      name: listing.neighborhood.name,
+    },
+    seller: listing.seller,
+    coverPhoto: listing.photos[0]
+      ? { url: listing.photos[0].url, thumbUrl: listing.photos[0].thumbUrl }
+      : null,
+    isBoosted: listing.isBoosted,
+  };
 
   return (
     <View style={s.root}>
@@ -63,9 +83,9 @@ export default function ItemDetail({ navigation, route }: Props) {
           <View style={s.circleBtn}>
             <ShareIcon size={14} />
           </View>
-          <View style={s.circleBtn}>
-            <HeartIcon size={16} />
-          </View>
+          <Pressable onPress={() => toggle(summary)} style={s.circleBtn}>
+            <HeartIcon size={16} color={isFavorite(listing.id) ? theme.orange : theme.ink} />
+          </Pressable>
         </View>
       </View>
 
@@ -157,9 +177,9 @@ export default function ItemDetail({ navigation, route }: Props) {
       </ScrollView>
 
       <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <View style={s.saveBtn}>
-          <HeartIcon size={20} color={theme.blue} />
-        </View>
+        <Pressable onPress={() => toggle(summary)} style={s.saveBtn}>
+          <HeartIcon size={20} color={isFavorite(listing.id) ? theme.orange : theme.blue} />
+        </Pressable>
         <Pressable
           onPress={() =>
             navigation.navigate('SendMessage', {

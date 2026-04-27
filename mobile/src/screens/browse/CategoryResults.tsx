@@ -2,7 +2,7 @@ import { ActivityIndicator, Image, ScrollView, View, Text, Pressable, StyleSheet
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
-import { useListings } from '../../api/queries';
+import { useFavoriteToggle, useListings } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import {
   ChevronLeftIcon,
@@ -41,6 +41,7 @@ export default function CategoryResults({ navigation, route }: Props) {
   const query = route.params?.query ?? '';
   const listingsQ = useListings({ q: query });
   const items = listingsQ.data ?? [];
+  const { isFavorite, toggle } = useFavoriteToggle();
 
   return (
     <View style={s.root}>
@@ -147,9 +148,12 @@ export default function CategoryResults({ navigation, route }: Props) {
                     <Text style={s.seller}>@{it.seller.handle}</Text>
                   </View>
                 </View>
-                <View style={s.rowHeart}>
-                  <HeartIcon size={18} color={theme.inkDim} />
-                </View>
+                <Pressable
+                  onPress={() => toggle(it)}
+                  hitSlop={8}
+                  style={s.rowHeart}>
+                  <HeartIcon size={18} color={isFavorite(it.id) ? theme.orange : theme.inkDim} />
+                </Pressable>
               </Pressable>
             );
           })}

@@ -5,7 +5,7 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../../theme';
-import { useCategories, useListings, useMe } from '../../api/queries';
+import { useCategories, useFavoriteToggle, useListings, useMe } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import {
   PinIcon,
@@ -27,6 +27,7 @@ export default function BrowseHome({ navigation }: Props) {
   const categoriesQ = useCategories();
   const listingsQ = useListings({ limit: 6 });
   const { data: me } = useMe();
+  const { isFavorite, toggle } = useFavoriteToggle();
   const location = me?.homeNeighborhood?.name.en ?? 'Dubai';
 
   return (
@@ -138,9 +139,12 @@ export default function BrowseHome({ navigation }: Props) {
                           <Text style={s.badgeText}>BOOSTED</Text>
                         </View>
                       ) : null}
-                      <View style={s.heartBtn}>
-                        <HeartIcon size={14} color={theme.ink} />
-                      </View>
+                      <Pressable
+                        onPress={() => toggle(it)}
+                        hitSlop={8}
+                        style={s.heartBtn}>
+                        <HeartIcon size={14} color={isFavorite(it.id) ? theme.orange : theme.ink} />
+                      </Pressable>
                     </View>
                     <View style={s.cardBody}>
                       <Text style={s.cardPrice}>AED {it.priceAed.toLocaleString()}</Text>
