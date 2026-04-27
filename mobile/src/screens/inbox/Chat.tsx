@@ -16,7 +16,7 @@ import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { Bubble } from '../../components/Bubble';
 import { MoreDotsIcon, PlusIcon, SendIcon } from '../../components/icons';
-import { useConversations, useMarkConversationRead, useMessages, useSendMessage } from '../../api/queries';
+import { useConversations, useDecideOffer, useMarkConversationRead, useMessages, useSendMessage } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import type { InboxStackParamList } from '../../navigation/types';
 
@@ -33,6 +33,7 @@ export default function Chat({ navigation, route }: Props) {
   const { data: messages = [] } = useMessages(threadId);
   const sendMessage = useSendMessage();
   const markRead = useMarkConversationRead();
+  const decideOffer = useDecideOffer();
 
   useEffect(() => {
     markRead(threadId);
@@ -102,29 +103,48 @@ export default function Chat({ navigation, route }: Props) {
               return <Bubble key={m.id} them={!m.fromMe} text={m.text} />;
             }
             if (m.kind === 'offer' && m.offer) {
+              const offer = m.offer;
+              const pending = offer.state === 'new';
               return (
                 <View key={m.id} style={s.offerCard}>
                   <View style={s.offerBody}>
                     <Text style={s.offerLabel}>OFFER</Text>
                     <View style={s.offerPriceRow}>
-                      <Text style={s.offerPrice}>AED {m.offer.priceAed.toLocaleString()}</Text>
-                      <Text style={s.offerWas}>{m.offer.listedPriceAed.toLocaleString()}</Text>
+                      <Text style={s.offerPrice}>AED {offer.priceAed.toLocaleString()}</Text>
+                      <Text style={s.offerWas}>{offer.listedPriceAed.toLocaleString()}</Text>
                     </View>
-                    {m.offer.pickupNote ? (
-                      <Text style={s.offerSub}>{m.offer.pickupNote}</Text>
+                    {offer.pickupNote ? (
+                      <Text style={s.offerSub}>{offer.pickupNote}</Text>
                     ) : null}
                   </View>
-                  <View style={s.offerActions}>
-                    <Pressable style={s.offerActionBtn}>
-                      <Text style={s.offerActionDecline}>Decline</Text>
-                    </Pressable>
-                    <Pressable style={[s.offerActionBtn, s.offerActionDivider]}>
-                      <Text style={s.offerActionCounter}>Counter</Text>
-                    </Pressable>
-                    <Pressable style={s.offerActionBtn}>
-                      <Text style={s.offerActionAccept}>Accept</Text>
-                    </Pressable>
-                  </View>
+                  {pending ? (
+                    <View style={s.offerActions}>
+                      <Pressable
+                        onPress={() => decideOffer(offer.id, threadId, 'declined')}
+                        style={s.offerActionBtn}>
+                        <Text style={s.offerActionDecline}>Decline</Text>
+                      </Pressable>
+                      <Pressable style={[s.offerActionBtn, s.offerActionDivider]}>
+                        <Text style={s.offerActionCounter}>Counter</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => decideOffer(offer.id, threadId, 'accepted')}
+                        style={s.offerActionBtn}>
+                        <Text style={s.offerActionAccept}>Accept</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <View style={s.offerSettled}>
+                      <Text
+                        style={[
+                          s.offerSettledText,
+                          offer.state === 'accepted' && s.offerSettledAccepted,
+                          offer.state === 'declined' && s.offerSettledDeclined,
+                        ]}>
+                        {offer.state === 'accepted' ? '✓ Accepted' : offer.state.charAt(0).toUpperCase() + offer.state.slice(1)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               );
             }
@@ -344,6 +364,24 @@ const s = StyleSheet.create({
     fontFamily: FONT.bold,
     fontSize: 13,
     color: theme.orange,
+  },
+  offerSettled: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+  },
+  offerSettledText: {
+    fontFamily: FONT.bold,
+    fontSize: 12,
+    color: theme.inkDim,
+    letterSpacing: 0.4,
+  },
+  offerSettledAccepted: {
+    color: theme.success,
+  },
+  offerSettledDeclined: {
+    color: theme.inkDim,
   },
   typing: {
     alignSelf: 'flex-start',

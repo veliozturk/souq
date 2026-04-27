@@ -152,6 +152,7 @@ export type Message = {
   kind: 'text' | 'offer';
   text: string | null;
   offer: {
+    id: string;
     priceAed: number;
     listedPriceAed: number;
     pickupNote: string | null;

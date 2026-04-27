@@ -203,3 +203,23 @@ export function useOffers(state?: OfferState) {
     queryFn: () => apiGet<Offer[]>(path),
   });
 }
+
+export function useDecideOffer() {
+  const qc = useQueryClient();
+
+  return (offerId: string, conversationId: string, decision: 'accepted' | 'declined') => {
+    qc.setQueryData<Message[]>(['messages', conversationId], (current) => {
+      const list = current ?? [];
+      return list.map((m) =>
+        m.offer && m.offer.id === offerId
+          ? { ...m, offer: { ...m.offer, state: decision } }
+          : m,
+      );
+    });
+
+    qc.setQueriesData<Offer[]>({ queryKey: ['offers'] }, (current) => {
+      const list = current ?? [];
+      return list.map((o) => (o.id === offerId ? { ...o, state: decision } : o));
+    });
+  };
+}
