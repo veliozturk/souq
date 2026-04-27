@@ -4,6 +4,7 @@ import type {
   Category,
   Conversation,
   DraftListing,
+  DraftListingDetail,
   FavoriteListing,
   ListingDetail,
   ListingFilters,
@@ -86,6 +87,14 @@ export function useDrafts() {
   return useQuery({
     queryKey: ['drafts'],
     queryFn: () => apiGet<DraftListing[]>('/api/listings/drafts'),
+  });
+}
+
+export function useDraft(id: string | undefined) {
+  return useQuery({
+    queryKey: ['draft', id],
+    queryFn: () => apiGet<DraftListingDetail>(`/api/listings/drafts/${id}`),
+    enabled: !!id,
   });
 }
 

@@ -191,4 +191,16 @@ export type DraftListing = {
   updatedAt: string;
 };
 
+export type ListingDraftBody = {
+  photoTints: string[];
+  title: string;
+  description: string;
+  categoryId: string | null;
+  conditionLabel: string | null;
+  priceAed: string;
+  acceptOffers: boolean;
+};
+
+export type DraftListingDetail = DraftListing & ListingDraftBody;
+
 export type FavoriteListing = ListingSummary & { favoritedAt: string };

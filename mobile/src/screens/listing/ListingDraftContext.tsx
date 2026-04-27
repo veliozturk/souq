@@ -1,16 +1,9 @@
 import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
 import { isDemoMode } from '../../api/client';
 import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
+import type { ListingDraftBody } from '../../api/types';
 
-export type ListingDraft = {
-  photoTints: string[];
-  title: string;
-  description: string;
-  categoryId: string | null;
-  conditionLabel: string | null;
-  priceAed: string;
-  acceptOffers: boolean;
-};
+export type ListingDraft = ListingDraftBody;
 
 const EMPTY: ListingDraft = {
   photoTints: [],
@@ -39,6 +32,7 @@ function initialDraft(): ListingDraft {
 type Ctx = {
   draft: ListingDraft;
   patch: (p: Partial<ListingDraft>) => void;
+  load: (body: ListingDraft) => void;
   reset: () => void;
 };
 
@@ -49,11 +43,14 @@ export function ListingDraftProvider({ children }: { children: ReactNode }) {
   const patch = useCallback((p: Partial<ListingDraft>) => {
     setDraft((d) => ({ ...d, ...p }));
   }, []);
+  const load = useCallback((body: ListingDraft) => {
+    setDraft({ ...body });
+  }, []);
   const reset = useCallback(() => {
     setDraft(initialDraft());
   }, []);
   return (
-    <ListingDraftCtx.Provider value={{ draft, patch, reset }}>
+    <ListingDraftCtx.Provider value={{ draft, patch, load, reset }}>
       {children}
     </ListingDraftCtx.Provider>
   );

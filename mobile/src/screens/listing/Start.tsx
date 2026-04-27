@@ -1,6 +1,8 @@
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -12,7 +14,9 @@ import {
   ChevronRightIcon,
 } from '../../components/icons';
 import { useDrafts } from '../../api/queries';
+import { apiGet } from '../../api/client';
 import { useListingDraft } from './ListingDraftContext';
+import type { DraftListingDetail } from '../../api/types';
 import type {
   ListingStackParamList,
   MainTabsParamList,
@@ -33,11 +37,41 @@ function draftMeta(d: { photoCount: number; hasPrice: boolean }): string {
 export default function ListingStart({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { data: drafts = [] } = useDrafts();
-  const { reset } = useListingDraft();
+  const { reset, load } = useListingDraft();
+  const queryClient = useQueryClient();
+  const [loadingDraftId, setLoadingDraftId] = useState<string | null>(null);
 
   const closeFlow = () => {
     reset();
     navigation.getParent<any>()?.navigate('HomeTab');
+  };
+
+  const startFresh = () => {
+    reset();
+    navigation.navigate('ListingPhotos');
+  };
+
+  const resumeDraft = async (id: string) => {
+    if (loadingDraftId) return;
+    setLoadingDraftId(id);
+    try {
+      const detail = await queryClient.fetchQuery<DraftListingDetail>({
+        queryKey: ['draft', id],
+        queryFn: () => apiGet<DraftListingDetail>(`/api/listings/drafts/${id}`),
+      });
+      load({
+        photoTints: detail.photoTints,
+        title: detail.title,
+        description: detail.description,
+        categoryId: detail.categoryId,
+        conditionLabel: detail.conditionLabel,
+        priceAed: detail.priceAed,
+        acceptOffers: detail.acceptOffers,
+      });
+      navigation.navigate('ListingPhotos');
+    } finally {
+      setLoadingDraftId(null);
+    }
   };
 
   return (
@@ -53,7 +87,7 @@ export default function ListingStart({ navigation }: Props) {
         <Text style={s.title}>Let's sell something{'\n'}that's collecting dust.</Text>
         <Text style={s.subtitle}>Most items in Dubai Marina sell in under 3 days.</Text>
 
-        <Pressable onPress={() => navigation.navigate('ListingPhotos')} style={s.heroBtn}>
+        <Pressable onPress={startFresh} style={s.heroBtn}>
           <LinearGradient
             colors={[theme.blue, theme.blue, theme.orange]}
             locations={[0, 0.6, 1.4]}
@@ -81,18 +115,29 @@ export default function ListingStart({ navigation }: Props) {
             </View>
 
             <View style={s.draftsList}>
-              {drafts.map((d) => (
-                <View key={d.id} style={s.draft}>
-                  <View style={s.draftIcon}>
-                    <PictureIcon size={22} color={theme.blue} />
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={s.draftTitle}>{d.title ?? 'Untitled draft'}</Text>
-                    <Text style={s.draftMeta}>{draftMeta(d)}</Text>
-                  </View>
-                  <ChevronRightIcon size={8} color={theme.inkDim} />
-                </View>
-              ))}
+              {drafts.map((d) => {
+                const loading = loadingDraftId === d.id;
+                return (
+                  <Pressable
+                    key={d.id}
+                    onPress={() => resumeDraft(d.id)}
+                    disabled={!!loadingDraftId}
+                    style={[s.draft, loading && s.draftLoading]}>
+                    <View style={s.draftIcon}>
+                      <PictureIcon size={22} color={theme.blue} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={s.draftTitle}>{d.title ?? 'Untitled draft'}</Text>
+                      <Text style={s.draftMeta}>{draftMeta(d)}</Text>
+                    </View>
+                    {loading ? (
+                      <ActivityIndicator size="small" color={theme.blue} />
+                    ) : (
+                      <ChevronRightIcon size={8} color={theme.inkDim} />
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </>
         ) : null}
@@ -240,6 +285,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     gap: 12,
+  },
+  draftLoading: {
+    opacity: 0.6,
   },
   draftIcon: {
     width: 44,
