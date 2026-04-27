@@ -141,6 +141,61 @@ export function useMessages(conversationId: string | undefined) {
   });
 }
 
+export function useSendMessage() {
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+
+  return (conversationId: string, rawText: string) => {
+    const text = rawText.trim();
+    if (!text || !me) return;
+    const now = new Date();
+
+    const newMessage: Message = {
+      id: `msg_${now.getTime()}`,
+      conversationId,
+      fromUserId: me.id,
+      fromMe: true,
+      createdAt: now.toISOString(),
+      kind: 'text',
+      text,
+      offer: null,
+    };
+
+    qc.setQueryData<Message[]>(['messages', conversationId], (current) => {
+      const list = current ?? [];
+      return [...list, newMessage];
+    });
+
+    qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+      const list = current ?? [];
+      return list.map((c) =>
+        c.id === conversationId
+          ? {
+              ...c,
+              lastMessage: {
+                text,
+                createdAt: now.toISOString(),
+                fromMe: true,
+                relativeTime: 'now',
+              },
+              unread: false,
+            }
+          : c,
+      );
+    });
+  };
+}
+
+export function useMarkConversationRead() {
+  const qc = useQueryClient();
+  return (conversationId: string) => {
+    qc.setQueryData<Conversation[]>(['conversations'], (current) => {
+      const list = current ?? [];
+      return list.map((c) => (c.id === conversationId && c.unread ? { ...c, unread: false } : c));
+    });
+  };
+}
+
 export function useOffers(state?: OfferState) {
   const path = state ? `/api/me/offers?status=${state}` : '/api/me/offers';
   return useQuery({

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -16,7 +16,7 @@ import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { Bubble } from '../../components/Bubble';
 import { MoreDotsIcon, PlusIcon, SendIcon } from '../../components/icons';
-import { useConversations, useMessages } from '../../api/queries';
+import { useConversations, useMarkConversationRead, useMessages, useSendMessage } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import type { InboxStackParamList } from '../../navigation/types';
 
@@ -31,6 +31,18 @@ export default function Chat({ navigation, route }: Props) {
   const { data: conversations = [] } = useConversations();
   const conversation = conversations.find((c) => c.id === threadId);
   const { data: messages = [] } = useMessages(threadId);
+  const sendMessage = useSendMessage();
+  const markRead = useMarkConversationRead();
+
+  useEffect(() => {
+    markRead(threadId);
+  }, [threadId, markRead]);
+
+  const handleSend = () => {
+    if (!canSend) return;
+    sendMessage(threadId, draft);
+    setDraft('');
+  };
 
   const peerName = conversation?.peer.displayName ?? '';
   const peerInitial = conversation?.peer.avatarInitial ?? peerName[0] ?? '?';
@@ -142,7 +154,7 @@ export default function Chat({ navigation, route }: Props) {
           </View>
           <Pressable
             disabled={!canSend}
-            onPress={() => setDraft('')}
+            onPress={handleSend}
             style={[s.sendBtn, !canSend && s.sendBtnDisabled]}>
             <SendIcon size={16} color="#fff" />
           </Pressable>
