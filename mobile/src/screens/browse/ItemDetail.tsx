@@ -17,6 +17,7 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { Chip } from '../../components/Chip';
+import { PhotoViewer } from '../../components/PhotoViewer';
 import {
   ChevronLeftIcon,
   ShareIcon,
@@ -39,6 +40,7 @@ export default function ItemDetail({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const listingQ = useListing(route.params.id);
   const { isFavorite, toggle } = useFavoriteToggle();
   const listing = listingQ.data;
@@ -121,11 +123,12 @@ export default function ItemDetail({ navigation, route }: Props) {
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={onGalleryScrollEnd}>
               {listing.photos.map((p) => (
-                <Image
-                  key={p.id}
-                  source={{ uri: photoUri(p.url) }}
-                  style={{ width, height: 320 }}
-                />
+                <Pressable key={p.id} onPress={() => setViewerOpen(true)}>
+                  <Image
+                    source={{ uri: photoUri(p.url) }}
+                    style={{ width, height: 320 }}
+                  />
+                </Pressable>
               ))}
             </ScrollView>
           ) : null}
@@ -236,6 +239,13 @@ export default function ItemDetail({ navigation, route }: Props) {
           </Pressable>
         ) : null}
       </View>
+
+      <PhotoViewer
+        visible={viewerOpen}
+        photos={listing.photos}
+        initialIndex={activeIndex}
+        onClose={() => setViewerOpen(false)}
+      />
     </View>
   );
 }
