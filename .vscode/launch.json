@@ -1,0 +1,63 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: API",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/api/Souq.Api.csproj",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ROOT": "${env:HOME}/.dotnet",
+        "DOTNET_MULTILEVEL_LOOKUP": "0",
+        "PATH": "${env:HOME}/.dotnet:${env:PATH}"
+      },
+      "serverReadyAction": {
+        "pattern": "Now listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar/v1",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Backend: API (coreclr fallback)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api",
+      "program": "${env:HOME}/.dotnet/dotnet",
+      "args": ["${workspaceFolder}/api/bin/Debug/net10.0/Souq.Api.dll"],
+      "cwd": "${workspaceFolder}/api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ROOT": "${env:HOME}/.dotnet",
+        "DOTNET_MULTILEVEL_LOOKUP": "0"
+      },
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Now listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/scalar/v1",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Mobile: Expo iOS",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "ios"],
+      "cwd": "${workspaceFolder}/mobile",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:5127"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All: API + Mobile",
+      "configurations": ["Backend: API", "Mobile: Expo iOS"],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { Alert, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Alert, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
@@ -11,6 +11,7 @@ import {
   useListingStats,
   useUpdateListingStatus,
 } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import type { MeStackParamList } from '../../navigation/types';
 
@@ -88,7 +89,14 @@ export default function ListingAdmin({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <View style={s.summary}>
-          <View style={[s.thumb, { backgroundColor: demoHue(id) }]} />
+          <View style={[s.thumb, { backgroundColor: demoHue(id) }]}>
+            {listing?.photos[0] ? (
+              <Image
+                source={{ uri: photoUri(listing.photos[0].thumbUrl ?? listing.photos[0].url) }}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : null}
+          </View>
           <View style={{ flex: 1 }}>
             <View style={[s.statusBadge, { backgroundColor: badge.bg }]}>
               <Text style={[s.statusBadgeText, { color: badge.fg }]}>● {badge.label}</Text>
@@ -168,7 +176,10 @@ export default function ListingAdmin({ navigation, route }: Props) {
               {listing?.isBoosted ? 'Boosted' : 'Boost · 50 AED'}
             </Text>
           </Pressable>
-          <Pressable style={s.editBtn}>
+          <Pressable
+            onPress={() => navigation.navigate('EditListing', { id })}
+            disabled={!listing}
+            style={[s.editBtn, !listing && s.editBtnDisabled]}>
             <Text style={s.editBtnText}>Edit</Text>
           </Pressable>
         </View>
@@ -232,6 +243,7 @@ const s = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 14,
+    overflow: 'hidden',
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -386,6 +398,9 @@ const s = StyleSheet.create({
     borderColor: theme.line,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  editBtnDisabled: {
+    opacity: 0.5,
   },
   editBtnText: {
     fontFamily: FONT.semibold,

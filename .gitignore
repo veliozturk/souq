@@ -6,3 +6,6 @@ dist
 .env.local
 .vite
 .claude/settings.local.json
+api/var/
+api/bin/
+api/obj/

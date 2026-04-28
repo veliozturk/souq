@@ -6,6 +6,7 @@ import { Progress } from '../../components/Progress';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { SecondaryBtn } from '../../components/SecondaryBtn';
 import { useAuthStub } from '../../auth/AuthStub';
+import { useAppConfig } from '../../api/queries';
 
 function SuccessIllo({ size = 180 }: { size?: number }) {
   return (
@@ -32,9 +33,21 @@ function SuccessIllo({ size = 180 }: { size?: number }) {
 }
 
 export default function Success() {
-  const { signIn, signupName, signupLocation } = useAuthStub();
+  const { signIn, pendingUser, signupDraft } = useAuthStub();
+  const { data: appConfig } = useAppConfig();
   const insets = useSafeAreaInsets();
-  const firstName = (signupName || '').split(' ')[0] || 'there';
+  const firstName =
+    pendingUser?.displayName?.split(' ')[0] ||
+    signupDraft.firstName?.trim() ||
+    'there';
+  const locationName =
+    pendingUser?.homeNeighborhood?.name.en ?? signupDraft.neighborhoodName ?? 'Dubai';
+  const creditLine = appConfig ? `+${appConfig.welcomeCreditAed} AED welcome credit` : 'Welcome credit';
+  const onDone = () => {
+    // Registration is disabled — this path is unreachable in the normal flow.
+    // Kept compile-safe for when registration is re-enabled (will need sessionId from API).
+    if (pendingUser) signIn(pendingUser, '');
+  };
 
   return (
     <View style={[s.root, { paddingTop: insets.top + 12 }]}>
@@ -47,7 +60,7 @@ export default function Success() {
 
         <Text style={s.title}>You're in,{'\n'}{firstName}.</Text>
         <Text style={s.subtitle}>
-          You're set up in <Text style={s.subtitleStrong}>{signupLocation || 'Dubai'}</Text>. List your first item
+          You're set up in <Text style={s.subtitleStrong}>{locationName}</Text>. List your first item
           and start earning AED.
         </Text>
 
@@ -56,16 +69,16 @@ export default function Success() {
             <Text style={s.creditBadgeText}>AED</Text>
           </View>
           <View>
-            <Text style={s.creditTitle}>+50 AED welcome credit</Text>
+            <Text style={s.creditTitle}>{creditLine}</Text>
             <Text style={s.creditSub}>Boost your first listing, on us.</Text>
           </View>
         </View>
       </ScrollView>
       <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-        <PrimaryBtn variant="orange" onPress={signIn}>
+        <PrimaryBtn variant="orange" onPress={onDone}>
           List my first item
         </PrimaryBtn>
-        <SecondaryBtn onPress={signIn}>Browse the market</SecondaryBtn>
+        <SecondaryBtn onPress={onDone}>Browse the market</SecondaryBtn>
       </View>
     </View>
   );

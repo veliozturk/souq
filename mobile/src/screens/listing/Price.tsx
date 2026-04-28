@@ -7,20 +7,16 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { Toggle } from '../../components/Toggle';
-import { isDemoMode } from '../../api/client';
 import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPrice'>;
-
-const demoMode = isDemoMode();
 
 export default function ListingPrice({ navigation }: Props) {
   const { draft, patch } = useListingDraft();
@@ -62,42 +58,12 @@ export default function ListingPrice({ navigation }: Props) {
             />
           </View>
 
-          {demoMode ? (
-            <View style={s.rangeCard}>
-              <View style={s.rangeHeader}>
-                <Text style={s.rangeLabel}>MARKET RANGE · MARINA</Text>
-                <Text style={s.rangeMeta}>94 similar items</Text>
-              </View>
-              <View style={s.rangeBarWrap}>
-                <LinearGradient
-                  colors={[theme.blue, theme.orange, theme.blue]}
-                  locations={[0, 0.5, 1]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={s.rangeBar}
-                />
-                <View style={s.rangeMarker} />
-              </View>
-              <View style={s.rangeLabels}>
-                <Text style={s.rangeLabelText}>500</Text>
-                <Text style={[s.rangeLabelText, s.rangeLabelHi]}>Sweet spot · 700–900</Text>
-                <Text style={s.rangeLabelText}>1,400</Text>
-              </View>
-              <View style={s.predictRow}>
-                <View style={s.predictDot} />
-                <Text style={s.predictText}>
-                  Likely to sell in <Text style={s.predictStrong}>3–5 days</Text>
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
           <View style={s.toggleRow}>
             <Toggle on={acceptOffers} onChange={setAcceptOffers} />
             <Text style={s.toggleLabel}>Accept offers</Text>
           </View>
         </ScrollView>
-        <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+        <View style={[s.actions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <PrimaryBtn onPress={() => navigation.navigate('ListingPreview')} disabled={!price}>
             Continue
           </PrimaryBtn>
@@ -262,6 +228,10 @@ const s = StyleSheet.create({
     color: theme.ink,
   },
   actions: {
-    paddingHorizontal: 20,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
 });

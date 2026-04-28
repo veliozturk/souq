@@ -1,32 +1,21 @@
 import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
-import { isDemoMode } from '../../api/client';
-import { LISTING_PRESET } from '../../data/fixtures/listingPreset';
 import type { ListingDraftBody } from '../../api/types';
 
 export type ListingDraft = ListingDraftBody;
 
 const EMPTY: ListingDraft = {
-  photoTints: [],
+  photos: [],
   title: '',
   description: '',
   categoryId: null,
-  conditionLabel: null,
+  conditionId: null,
+  neighborhoodId: null,
   priceAed: '',
   acceptOffers: true,
 };
 
-const DEMO: ListingDraft = {
-  photoTints: LISTING_PRESET.photoTints,
-  title: LISTING_PRESET.title,
-  description: LISTING_PRESET.description,
-  categoryId: LISTING_PRESET.categoryId,
-  conditionLabel: LISTING_PRESET.conditionLabel,
-  priceAed: LISTING_PRESET.priceAed,
-  acceptOffers: LISTING_PRESET.acceptOffers,
-};
-
 function initialDraft(): ListingDraft {
-  return isDemoMode() ? { ...DEMO } : { ...EMPTY };
+  return { ...EMPTY };
 }
 
 type Ctx = {

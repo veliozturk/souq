@@ -23,11 +23,19 @@ import type { AuthStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<AuthStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
-  const { signupName, setSignupName } = useAuthStub();
-  const [handle, setHandle] = useState('aisha.m');
+  const { signupDraft, setSignupDraft } = useAuthStub();
+  const [handle, setHandle] = useState(signupDraft.handle ?? 'aisha.m');
   const insets = useSafeAreaInsets();
-  const initial = signupName.trim().charAt(0).toUpperCase() || 'A';
-  const canContinue = signupName.trim().length > 0 && handle.trim().length > 0;
+  const firstName = signupDraft.firstName ?? '';
+  const lastName = signupDraft.lastName ?? '';
+  const initial = firstName.trim().charAt(0).toUpperCase() || 'A';
+  const canContinue =
+    firstName.trim().length > 0 && lastName.trim().length > 0 && handle.trim().length > 0;
+
+  const goNext = () => {
+    setSignupDraft({ handle });
+    navigation.navigate('Location');
+  };
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -60,13 +68,26 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
 
           <View style={s.fieldWrap}>
-            <FieldLabel>Full name</FieldLabel>
+            <FieldLabel>First name</FieldLabel>
             <View style={s.inputFocused}>
               <TextInput
-                value={signupName}
-                onChangeText={setSignupName}
+                value={firstName}
+                onChangeText={(v) => setSignupDraft({ firstName: v })}
                 selectionColor={theme.orange}
                 style={s.inputText}
+                autoCapitalize="words"
+              />
+            </View>
+          </View>
+
+          <View style={s.fieldWrap2}>
+            <FieldLabel>Last name</FieldLabel>
+            <View style={s.inputBordered}>
+              <TextInput
+                value={lastName}
+                onChangeText={(v) => setSignupDraft({ lastName: v })}
+                selectionColor={theme.orange}
+                style={[s.inputText, { flex: 1 }]}
                 autoCapitalize="words"
               />
             </View>
@@ -90,7 +111,7 @@ export default function ProfileScreen({ navigation }: Props) {
         </ScrollView>
 
         <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-          <PrimaryBtn onPress={() => navigation.navigate('Location')} disabled={!canContinue}>
+          <PrimaryBtn onPress={goNext} disabled={!canContinue}>
             Continue
           </PrimaryBtn>
         </View>

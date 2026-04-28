@@ -14,7 +14,7 @@ import {
   MapPinSimpleIcon,
   ChevronRightIcon,
 } from '../../components/icons';
-import { useCategories, useMe } from '../../api/queries';
+import { useCategories, useConditions, useMe } from '../../api/queries';
 import { useListingDraft } from './ListingDraftContext';
 import type { ListingStackParamList } from '../../navigation/types';
 import type { ComponentType } from 'react';
@@ -30,16 +30,15 @@ const ICON_BY_KEY: Record<string, ComponentType<{ size: number; color: string }>
   'cat-kids': CatKidsIcon,
 };
 
-const CONDITIONS = ['Brand new', 'Like new', 'Good', 'Fair'];
-
 export default function ListingCategory({ navigation }: Props) {
   const { data: categories = [] } = useCategories();
+  const { data: conditions = [] } = useConditions();
   const { data: me } = useMe();
   const { draft, patch } = useListingDraft();
   const cat = draft.categoryId;
-  const cond = draft.conditionLabel;
+  const cond = draft.conditionId;
   const setCat = (v: string) => patch({ categoryId: v });
-  const setCond = (v: string) => patch({ conditionLabel: v });
+  const setCond = (v: string) => patch({ conditionId: v });
   const insets = useSafeAreaInsets();
   const pickupNbh = me?.homeNeighborhood?.name.en ?? null;
 
@@ -75,14 +74,14 @@ export default function ListingCategory({ navigation }: Props) {
 
         <Text style={s.section}>CONDITION</Text>
         <View style={s.condRow}>
-          {CONDITIONS.map((c) => {
-            const sel = c === cond;
+          {conditions.map((c) => {
+            const sel = c.id === cond;
             return (
               <Pressable
-                key={c}
-                onPress={() => setCond(c)}
+                key={c.id}
+                onPress={() => setCond(c.id)}
                 style={[s.condChip, sel ? s.condChipOn : s.condChipOff]}>
-                <Text style={[s.condText, { color: sel ? '#fff' : theme.ink }]}>{c}</Text>
+                <Text style={[s.condText, { color: sel ? '#fff' : theme.ink }]}>{c.name.en}</Text>
               </Pressable>
             );
           })}
@@ -99,7 +98,7 @@ export default function ListingCategory({ navigation }: Props) {
           <ChevronRightIcon size={8} color={theme.inkDim} />
         </View>
       </ScrollView>
-      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <PrimaryBtn onPress={() => navigation.navigate('ListingPrice')} disabled={!cat || !cond}>
           Continue
         </PrimaryBtn>
@@ -222,6 +221,10 @@ const s = StyleSheet.create({
     color: theme.inkDim,
   },
   actions: {
-    paddingHorizontal: 20,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
 });

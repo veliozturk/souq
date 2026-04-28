@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -6,21 +7,39 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { CrosshairIcon, MapPinIcon, CheckIcon } from '../../components/icons';
 import { useAuthStub } from '../../auth/AuthStub';
+import { useNeighborhoods } from '../../api/queries';
+import { register } from '../../api/auth';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Location'>;
 
-const NEIGHBOURHOODS = [
-  { name: 'Dubai Marina', sub: '2.1 km away · 4,280 items' },
-  { name: 'Downtown Dubai', sub: '5.4 km · 6,120 items' },
-  { name: 'Jumeirah', sub: '3.8 km · 2,940 items' },
-  { name: 'Business Bay', sub: '4.1 km · 3,550 items' },
-  { name: 'JBR', sub: '1.9 km · 1,870 items' },
-];
-
 export default function LocationScreen({ navigation }: Props) {
-  const { signupLocation, setSignupLocation } = useAuthStub();
+  const { signupDraft, setSignupDraft, setPendingUser } = useAuthStub();
+  const { data: neighborhoods = [] } = useNeighborhoods();
   const insets = useSafeAreaInsets();
+  const signupLocation = signupDraft.neighborhoodName;
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onContinue = async () => {
+    if (submitting) return;
+    const { phone, firstName, lastName, handle, neighborhoodId } = signupDraft;
+    if (!phone || !firstName || !lastName || !handle || !neighborhoodId) {
+      setError('Missing fields — please go back and complete the form.');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await register({ phone, firstName, lastName, handle, neighborhoodId });
+      setPendingUser(result.user);
+      navigation.navigate('Success');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -40,12 +59,13 @@ export default function LocationScreen({ navigation }: Props) {
         <Text style={s.section}>POPULAR IN DUBAI</Text>
 
         <View style={s.list}>
-          {NEIGHBOURHOODS.map((h) => {
-            const selected = signupLocation === h.name;
+          {neighborhoods.map((h) => {
+            const name = h.name.en;
+            const selected = signupLocation === name;
             return (
               <Pressable
-                key={h.name}
-                onPress={() => setSignupLocation(h.name)}
+                key={h.id}
+                onPress={() => setSignupDraft({ neighborhoodId: h.id, neighborhoodName: name })}
                 style={[s.row, selected && s.rowSelected]}>
                 <View style={[s.rowIcon, { backgroundColor: selected ? theme.orange : theme.blueSoft }]}>
                   <MapPinIcon
@@ -55,8 +75,7 @@ export default function LocationScreen({ navigation }: Props) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.rowName}>{h.name}</Text>
-                  <Text style={s.rowSub}>{h.sub}</Text>
+                  <Text style={s.rowName}>{name}</Text>
                 </View>
                 {selected ? (
                   <View style={s.rowCheck}>
@@ -69,8 +88,9 @@ export default function LocationScreen({ navigation }: Props) {
         </View>
       </ScrollView>
       <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-        <PrimaryBtn onPress={() => navigation.navigate('Success')} disabled={!signupLocation}>
-          Continue
+        {error ? <Text style={s.errorText}>{error}</Text> : null}
+        <PrimaryBtn onPress={onContinue} disabled={!signupLocation || submitting}>
+          {submitting ? 'Creating account…' : 'Continue'}
         </PrimaryBtn>
       </View>
     </View>
@@ -155,12 +175,6 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: theme.ink,
   },
-  rowSub: {
-    marginTop: 2,
-    fontFamily: FONT.regular,
-    fontSize: 12,
-    color: theme.inkDim,
-  },
   rowCheck: {
     width: 22,
     height: 22,
@@ -171,5 +185,12 @@ const s = StyleSheet.create({
   },
   actions: {
     paddingHorizontal: 24,
+  },
+  errorText: {
+    marginBottom: 12,
+    fontFamily: FONT.medium,
+    fontSize: 13,
+    color: '#c0392b',
+    textAlign: 'center',
   },
 });

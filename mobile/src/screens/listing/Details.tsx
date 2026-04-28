@@ -112,7 +112,7 @@ export default function ListingDetails({ navigation }: Props) {
             </View>
           </View>
         </ScrollView>
-        <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+        <View style={[s.actions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <PrimaryBtn onPress={() => navigation.navigate('ListingCategory')} disabled={!title.trim()}>
             Continue
           </PrimaryBtn>
@@ -316,6 +316,10 @@ const s = StyleSheet.create({
     color: theme.blue,
   },
   actions: {
-    paddingHorizontal: 20,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
 });

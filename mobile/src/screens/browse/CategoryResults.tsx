@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { useFavoriteToggle, useListings } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import {
   ChevronLeftIcon,
@@ -38,9 +39,10 @@ function timeAgo(iso: string | null): string {
 
 export default function CategoryResults({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
-  const query = route.params?.query ?? '';
-  const listingsQ = useListings({ q: query });
+  const { query, categoryId, label } = route.params ?? {};
+  const listingsQ = useListings(categoryId ? { categoryId } : { q: query ?? '' });
   const items = listingsQ.data ?? [];
+  const headerText = label ?? query ?? '';
   const { isFavorite, toggle } = useFavoriteToggle();
 
   return (
@@ -52,7 +54,7 @@ export default function CategoryResults({ navigation, route }: Props) {
           </Pressable>
           <View style={s.searchInput}>
             <SearchIcon size={13} />
-            <Text style={s.searchText}>{query}</Text>
+            <Text style={s.searchText}>{headerText}</Text>
           </View>
         </View>
 
@@ -103,7 +105,7 @@ export default function CategoryResults({ navigation, route }: Props) {
         </View>
       ) : items.length === 0 ? (
         <View style={s.statusBox}>
-          <Text style={s.statusText}>No matches for "{query}".</Text>
+          <Text style={s.statusText}>No matches for "{headerText}".</Text>
         </View>
       ) : (
         <ScrollView
@@ -120,7 +122,7 @@ export default function CategoryResults({ navigation, route }: Props) {
                 style={[s.row, i === 0 && s.rowFeatured]}>
                 <View style={[s.rowImg, { backgroundColor: hue }]}>
                   {thumb ? (
-                    <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} />
+                    <Image source={{ uri: photoUri(thumb) }} style={StyleSheet.absoluteFill} />
                   ) : null}
                   {it.isBoosted ? (
                     <View style={[s.newBadge, { backgroundColor: theme.orange }]}>
@@ -152,7 +154,11 @@ export default function CategoryResults({ navigation, route }: Props) {
                   onPress={() => toggle(it)}
                   hitSlop={8}
                   style={s.rowHeart}>
-                  <HeartIcon size={18} color={isFavorite(it.id) ? theme.orange : theme.inkDim} />
+                  <HeartIcon
+                    size={18}
+                    color={isFavorite(it.id) ? theme.orange : theme.inkDim}
+                    filled={isFavorite(it.id)}
+                  />
                 </Pressable>
               </Pressable>
             );

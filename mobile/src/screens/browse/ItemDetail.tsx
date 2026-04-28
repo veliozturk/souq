@@ -1,4 +1,16 @@
-import { ActivityIndicator, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -13,6 +25,7 @@ import {
   MessageBubbleIcon,
 } from '../../components/icons';
 import { useFavoriteToggle, useListing } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import type { ListingSummary } from '../../api/types';
 import type { BrowseStackParamList, RootStackParamList } from '../../navigation/types';
@@ -24,6 +37,8 @@ type Props = CompositeScreenProps<
 
 export default function ItemDetail({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(0);
   const listingQ = useListing(route.params.id);
   const { isFavorite, toggle } = useFavoriteToggle();
   const listing = listingQ.data;
@@ -46,8 +61,12 @@ export default function ItemDetail({ navigation, route }: Props) {
     );
   }
 
-  const cover = listing.photos[0];
   const photoCount = Math.max(listing.photos.length, 1);
+  const onGalleryScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (width <= 0) return;
+    const next = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (next !== activeIndex) setActiveIndex(next);
+  };
   const discount =
     listing.previousPriceAed && listing.previousPriceAed > 0
       ? Math.round(((listing.previousPriceAed - listing.priceAed) / listing.previousPriceAed) * 100)
@@ -84,15 +103,31 @@ export default function ItemDetail({ navigation, route }: Props) {
             <ShareIcon size={14} />
           </View>
           <Pressable onPress={() => toggle(summary)} style={s.circleBtn}>
-            <HeartIcon size={16} color={isFavorite(listing.id) ? theme.orange : theme.ink} />
+            <HeartIcon
+              size={16}
+              color={isFavorite(listing.id) ? theme.orange : theme.ink}
+              filled={isFavorite(listing.id)}
+            />
           </Pressable>
         </View>
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         <View style={[s.gallery, { backgroundColor: demoHue(listing.id) }]}>
-          {cover ? (
-            <Image source={{ uri: cover.url }} style={StyleSheet.absoluteFill} />
+          {listing.photos.length > 0 ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onGalleryScrollEnd}>
+              {listing.photos.map((p) => (
+                <Image
+                  key={p.id}
+                  source={{ uri: photoUri(p.url) }}
+                  style={{ width, height: 320 }}
+                />
+              ))}
+            </ScrollView>
           ) : null}
           {listing.isBoosted ? (
             <View style={s.boostBadge}>
@@ -101,11 +136,11 @@ export default function ItemDetail({ navigation, route }: Props) {
           ) : null}
           <View style={s.dotsRow}>
             {Array.from({ length: photoCount }).map((_, i) => (
-              <View key={i} style={[s.dot, i === 0 ? s.dotActive : null]} />
+              <View key={i} style={[s.dot, i === activeIndex ? s.dotActive : null]} />
             ))}
           </View>
           <View style={s.counter}>
-            <Text style={s.counterText}>1 / {photoCount}</Text>
+            <Text style={s.counterText}>{activeIndex + 1} / {photoCount}</Text>
           </View>
         </View>
 
@@ -177,9 +212,6 @@ export default function ItemDetail({ navigation, route }: Props) {
       </ScrollView>
 
       <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <Pressable onPress={() => toggle(summary)} style={s.saveBtn}>
-          <HeartIcon size={20} color={isFavorite(listing.id) ? theme.orange : theme.blue} />
-        </Pressable>
         <Pressable
           onPress={() =>
             navigation.navigate('SendMessage', {
@@ -437,14 +469,6 @@ const s = StyleSheet.create({
     paddingTop: 12,
     flexDirection: 'row',
     gap: 8,
-  },
-  saveBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: theme.blueSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   messageBtn: {
     flex: 1,

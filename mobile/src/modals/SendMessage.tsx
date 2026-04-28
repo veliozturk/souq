@@ -12,9 +12,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../theme';
-import { QUICK_REPLIES } from '../data/quickReplies';
 import { SparkleIcon, MicIcon, SendIcon, ShieldIcon } from '../components/icons';
-import { useListing, useStartConversation } from '../api/queries';
+import { useListing, useQuickReplies, useStartConversation } from '../api/queries';
 import { demoHue } from '../utils/demoHue';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -23,18 +22,19 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SendMessage'>;
 export default function SendMessage({ navigation, route }: Props) {
   const { itemId } = route.params;
   const { data: listing } = useListing(itemId);
+  const { data: quickReplies = [] } = useQuickReplies();
   const startConversation = useStartConversation();
 
   const [message, setMessage] = useState('');
-  const [activeReply, setActiveReply] = useState<number | null>(null);
+  const [activeReply, setActiveReply] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
 
   const dismiss = () => navigation.goBack();
   const canSend = message.trim().length > 0 && !!listing;
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!canSend || !listing) return;
-    const conversationId = startConversation({
+    const conversationId = await startConversation({
       listingId: listing.id,
       listingTitle: listing.title.original,
       listingPriceAed: listing.priceAed,
@@ -86,19 +86,20 @@ export default function SendMessage({ navigation, route }: Props) {
 
             <Text style={s.section}>QUICK MESSAGES</Text>
             <View style={s.quickRow}>
-              {QUICK_REPLIES.map((q, i) => {
-                const on = i === activeReply;
+              {quickReplies.map((q) => {
+                const on = q.id === activeReply;
+                const text = q.text.en;
                 return (
                   <Pressable
-                    key={q}
+                    key={q.id}
                     onPress={() => {
-                      setActiveReply(i);
-                      setMessage(sellerFirstName ? `Hi ${sellerFirstName}! ${q}` : q);
+                      setActiveReply(q.id);
+                      setMessage(sellerFirstName ? `Hi ${sellerFirstName}! ${text}` : text);
                     }}
                     style={[s.quickChip, on && s.quickChipOn]}>
                     <Text style={[s.quickText, on && s.quickTextOn]}>
                       {on ? '✓ ' : ''}
-                      {q}
+                      {text}
                     </Text>
                   </Pressable>
                 );

@@ -60,11 +60,12 @@ export default function ListingStart({ navigation }: Props) {
         queryFn: () => apiGet<DraftListingDetail>(`/api/listings/drafts/${id}`),
       });
       load({
-        photoTints: detail.photoTints,
+        photos: detail.photos ?? [],
         title: detail.title,
         description: detail.description,
         categoryId: detail.categoryId,
-        conditionLabel: detail.conditionLabel,
+        conditionId: detail.conditionId,
+        neighborhoodId: detail.neighborhoodId ?? null,
         priceAed: detail.priceAed,
         acceptOffers: detail.acceptOffers,
       });

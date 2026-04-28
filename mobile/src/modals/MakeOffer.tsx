@@ -37,9 +37,9 @@ export default function MakeOffer({ navigation, route }: Props) {
     ? Math.round((1 - offerNum / listed) * 100)
     : null;
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSend || !listing) return;
-    const conversationId = makeOffer({
+    const conversationId = await makeOffer({
       listingId: listing.id,
       listingTitle: listing.title.original,
       listingPriceAed: listing.priceAed,

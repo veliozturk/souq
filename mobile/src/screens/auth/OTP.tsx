@@ -14,16 +14,40 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
+import { useAuthStub } from '../../auth/AuthStub';
+import { verifyOtp } from '../../api/auth';
+import { ApiError } from '../../api/client';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'OTP'>;
 
 export default function OTP({ navigation, route }: Props) {
   const phone = route.params?.phone ?? '+971 50 123 4567';
+  const { signIn } = useAuthStub();
   const [code, setCode] = useState<string[]>(['4', '7', '2', '1', '', '']);
   const [secondsLeft, setSecondsLeft] = useState(24);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
   const insets = useSafeAreaInsets();
+
+  const onVerify = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { user, sessionId } = await verifyOtp(phone, code.join(''));
+      signIn(user, sessionId);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) {
+        setError('Phone not registered');
+      } else {
+        setError(e instanceof Error ? e.message : 'Network error');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -108,11 +132,13 @@ export default function OTP({ navigation, route }: Props) {
               </Pressable>
             )}
           </View>
+
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
         </ScrollView>
 
         <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-          <PrimaryBtn onPress={() => navigation.navigate('Profile')} disabled={!complete}>
-            Verify
+          <PrimaryBtn onPress={onVerify} disabled={!complete || submitting}>
+            {submitting ? 'Verifying…' : 'Verify'}
           </PrimaryBtn>
         </View>
       </KeyboardAvoidingView>
@@ -200,6 +226,13 @@ const s = StyleSheet.create({
     fontFamily: FONT.semibold,
     fontSize: 14,
     color: theme.blue,
+  },
+  errorText: {
+    marginTop: 18,
+    fontFamily: FONT.medium,
+    fontSize: 13,
+    color: '#c0392b',
+    textAlign: 'center',
   },
   actions: {
     paddingHorizontal: 24,

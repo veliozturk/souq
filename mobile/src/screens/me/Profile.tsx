@@ -89,6 +89,7 @@ export default function MeProfile({ navigation }: Props) {
           right: me ? String(me.counts.savedItems) : '',
           icon: <HeartIcon size={16} color={theme.blue} />,
           iconBg: theme.blueSoft,
+          onPress: () => navigation.getParent<any>()?.navigate('SavedTab'),
         },
         {
           label: 'Purchase history',

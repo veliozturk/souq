@@ -10,6 +10,23 @@ export type Category = {
   sortOrder: number;
 };
 
+export type Condition = {
+  id: string;
+  slug: string;
+  name: Bilingual;
+  sortOrder: number;
+};
+
+export type QuickReply = {
+  id: string;
+  text: Bilingual;
+  sortOrder: number;
+};
+
+export type AppConfig = {
+  welcomeCreditAed: number;
+};
+
 export type SellerSummary = {
   id: string;
   handle: string;
@@ -116,6 +133,10 @@ export type Me = {
     unreadOffers: number;
     savedItems: number;
   };
+  sellerStats: {
+    views7d: number;
+    earnedAed: number;
+  };
   walletBalanceAed: number;
 };
 
@@ -139,6 +160,7 @@ export type Conversation = {
   };
   unread: boolean;
   hasOffer: boolean;
+  iAmSeller: boolean;
 };
 
 export type OfferState = 'new' | 'countered' | 'expiring' | 'declined' | 'accepted';
@@ -192,16 +214,46 @@ export type DraftListing = {
   updatedAt: string;
 };
 
+export type LocalPhoto = {
+  uri: string;
+  width: number;
+  height: number;
+  mime: string;
+};
+
 export type ListingDraftBody = {
-  photoTints: string[];
+  photos: LocalPhoto[];
   title: string;
   description: string;
   categoryId: string | null;
-  conditionLabel: string | null;
+  conditionId: string | null;
+  neighborhoodId: string | null;
   priceAed: string;
+  acceptOffers: boolean;
+};
+
+export type ListingUpdateBody = {
+  title: string;
+  description: string;
+  categoryId: string;
+  conditionId: string;
+  neighborhoodId: string;
+  priceAed: number;
   acceptOffers: boolean;
 };
 
 export type DraftListingDetail = DraftListing & ListingDraftBody;
 
 export type FavoriteListing = ListingSummary & { favoritedAt: string };
+
+export type NotificationKind = 'offer' | 'message' | 'listing' | 'boost' | 'system';
+
+export type Notification = {
+  id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  createdAt: string;
+  relativeTime: string;
+  read: boolean;
+};

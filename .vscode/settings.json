@@ -1,0 +1,13 @@
+{
+  "omnisharp.dotnetPath": "/Users/veliozturk/.dotnet",
+  "dotnetAcquisitionExtension.existingDotnetPath": [
+    {
+      "extensionId": "ms-dotnettools.csharp",
+      "path": "/Users/veliozturk/.dotnet/dotnet"
+    },
+    {
+      "extensionId": "ms-dotnettools.csdevkit",
+      "path": "/Users/veliozturk/.dotnet/dotnet"
+    }
+  ]
+}

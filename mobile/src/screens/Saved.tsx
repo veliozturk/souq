@@ -1,14 +1,30 @@
-import { ActivityIndicator, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../theme';
 import { HeartIcon } from '../components/icons';
 import { useFavorites, useFavoriteToggle } from '../api/queries';
+import { photoUri } from '../api/photoUri';
 import { demoHue } from '../utils/demoHue';
+import type { MainTabsParamList } from '../navigation/types';
 
-export default function Saved() {
+type Props = BottomTabScreenProps<MainTabsParamList, 'SavedTab'>;
+
+export default function Saved({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { data: favorites = [], isPending, isError, refetch } = useFavorites();
   const { toggle } = useFavoriteToggle();
+
+  const confirmRemove = (it: (typeof favorites)[number]) => {
+    Alert.alert(
+      'Remove from saved?',
+      it.title.original,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => toggle(it) },
+      ],
+    );
+  };
 
   return (
     <View style={s.root}>
@@ -38,15 +54,20 @@ export default function Saved() {
             {favorites.map((it) => {
               const thumb = it.coverPhoto?.thumbUrl ?? it.coverPhoto?.url ?? null;
               return (
-                <View key={it.id} style={s.cardOuter}>
+                <Pressable
+                  key={it.id}
+                  onPress={() =>
+                    navigation.navigate('HomeTab', { screen: 'ItemDetail', params: { id: it.id } })
+                  }
+                  style={s.cardOuter}>
                   <View style={s.card}>
                     <View style={[s.cardImage, { backgroundColor: demoHue(it.id) }]}>
-                      {thumb ? <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} /> : null}
+                      {thumb ? <Image source={{ uri: photoUri(thumb) }} style={StyleSheet.absoluteFill} /> : null}
                       <Pressable
-                        onPress={() => toggle(it)}
+                        onPress={() => confirmRemove(it)}
                         hitSlop={8}
                         style={s.heartBtn}>
-                        <HeartIcon size={14} color={theme.orange} />
+                        <HeartIcon size={14} color={theme.orange} filled />
                       </Pressable>
                     </View>
                     <View style={s.cardBody}>
@@ -57,7 +78,7 @@ export default function Saved() {
                       <Text style={s.cardLoc}>{it.neighborhood.name.en}</Text>
                     </View>
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>

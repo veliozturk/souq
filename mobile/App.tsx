@@ -1,5 +1,6 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import {
@@ -15,6 +16,11 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { theme } from './src/theme';
 
 const queryClient = new QueryClient();
+
+const navTheme = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, background: theme.bg },
+};
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -33,15 +39,17 @@ export default function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <AuthStubProvider>
-          <NavigationContainer>
-            <RootNavigator />
-            <StatusBar style="dark" />
-          </NavigationContainer>
-        </AuthStubProvider>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <AuthStubProvider>
+            <NavigationContainer theme={navTheme}>
+              <RootNavigator />
+              <StatusBar style="dark" />
+            </NavigationContainer>
+          </AuthStubProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

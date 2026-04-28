@@ -1,6 +1,9 @@
+import type { ReactElement } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path, Circle } from 'react-native-svg';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import type { MainTabsParamList } from './types';
 import { theme, FONT } from '../theme';
@@ -21,6 +24,48 @@ const TAB_LABELS: Record<keyof MainTabsParamList, string> = {
   MeTab: 'Me',
 };
 
+type IconProps = { color: string };
+
+function HomeIcon({ color }: IconProps) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+      <Path d="M2 10l9-7 9 7v10H2V10z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function SavedIcon({ color }: IconProps) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+      <Path d="M11 19l-7-5a5 5 0 017-7 5 5 0 017 7l-7 5z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function InboxIcon({ color }: IconProps) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+      <Path d="M3 5h16v12H7l-4 3V5z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function MeIcon({ color }: IconProps) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+      <Circle cx={11} cy={8} r={3.5} stroke={color} strokeWidth={1.6} />
+      <Path d="M4 19c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+const TAB_ICONS: Partial<Record<keyof MainTabsParamList, (props: IconProps) => ReactElement>> = {
+  HomeTab: HomeIcon,
+  SavedTab: SavedIcon,
+  InboxTab: InboxIcon,
+  MeTab: MeIcon,
+};
+
 function useTabBadges(): Partial<Record<keyof MainTabsParamList, number>> {
   const { data: conversations = [] } = useConversations();
   const inboxUnread = conversations.filter((c) => c.unread).length;
@@ -32,6 +77,23 @@ function useTabBadges(): Partial<Record<keyof MainTabsParamList, number>> {
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const badges = useTabBadges();
+  const activeRoute = state.routes[state.index];
+  const nestedRouteName = getFocusedRouteNameFromRoute(activeRoute);
+  if (activeRoute.name === 'InboxTab' && nestedRouteName === 'Chat') {
+    return null;
+  }
+  if (activeRoute.name === 'HomeTab' && nestedRouteName === 'ItemDetail') {
+    return null;
+  }
+  if (
+    activeRoute.name === 'MeTab' &&
+    (nestedRouteName === 'EditListing' || nestedRouteName === 'EditPhotos')
+  ) {
+    return null;
+  }
+  if (activeRoute.name === 'SellTab') {
+    return null;
+  }
   return (
     <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       {state.routes.map((route, index) => {
@@ -40,6 +102,8 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         const label = TAB_LABELS[name] ?? route.name;
         const isSell = route.name === 'SellTab';
         const badge = badges[name];
+        const Icon = TAB_ICONS[name];
+        const iconColor = focused ? theme.blue : theme.inkDim;
         return (
           <Pressable
             key={route.key}
@@ -52,19 +116,23 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             style={s.tab}>
             {isSell ? (
               <View style={s.sellPill}>
-                <Text style={s.sellPillText}>+</Text>
+                <Svg width={22} height={22} viewBox="0 0 22 22" fill="none">
+                  <Path d="M11 3v16M3 11h16" stroke="#fff" strokeWidth={2.2} strokeLinecap="round" />
+                </Svg>
               </View>
             ) : (
-              <View style={s.labelWrap}>
+              <View style={s.iconColumn}>
+                <View style={s.iconWrap}>
+                  {Icon ? <Icon color={iconColor} /> : null}
+                  {badge !== undefined ? (
+                    <View style={s.badge}>
+                      <Text style={s.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <Text style={[s.label, focused && s.labelFocused]}>{label}</Text>
-                {badge !== undefined ? (
-                  <View style={s.badge}>
-                    <Text style={s.badgeText}>{badge > 9 ? '9+' : badge}</Text>
-                  </View>
-                ) : null}
               </View>
             )}
-            {isSell ? <Text style={[s.label, focused && s.labelFocused]}>{label}</Text> : null}
           </Pressable>
         );
       })}
@@ -92,7 +160,7 @@ const s = StyleSheet.create({
     backgroundColor: theme.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.line,
-    paddingTop: 8,
+    paddingTop: 16,
   },
   tab: {
     flex: 1,
@@ -110,26 +178,30 @@ const s = StyleSheet.create({
     fontFamily: FONT.semibold,
   },
   sellPill: {
-    width: 36,
-    height: 36,
+    width: 52,
+    height: 52,
     borderRadius: 18,
     backgroundColor: theme.orange,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginTop: -10,
+    shadowColor: theme.orange,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    elevation: 10,
   },
-  sellPillText: {
-    color: theme.surface,
-    fontFamily: FONT.bold,
-    fontSize: 22,
-    lineHeight: 24,
-  },
-  labelWrap: {
-    flexDirection: 'row',
+  iconColumn: {
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
+  },
+  iconWrap: {
+    position: 'relative',
   },
   badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
     minWidth: 16,
     height: 16,
     borderRadius: 8,

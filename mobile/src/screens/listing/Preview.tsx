@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
@@ -10,7 +10,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { Toggle } from '../../components/Toggle';
 import { PinIcon, BoltIcon } from '../../components/icons';
-import { useCategories, useCreateListing, useMe, useSaveDraft } from '../../api/queries';
+import { useAppConfig, useCategories, useConditions, useCreateListing, useMe, useSaveDraft } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
 import { useListingDraft } from './ListingDraftContext';
 import type {
@@ -25,20 +25,24 @@ type Props = CompositeScreenProps<
 
 export default function ListingPreview({ navigation }: Props) {
   const [boost, setBoost] = useState(true);
+  const [publishing, setPublishing] = useState(false);
   const insets = useSafeAreaInsets();
   const { draft, reset } = useListingDraft();
   const { data: me } = useMe();
   const { data: categories = [] } = useCategories();
+  const { data: conditions = [] } = useConditions();
+  const { data: appConfig } = useAppConfig();
   const createListing = useCreateListing();
   const saveDraft = useSaveDraft();
-  const canPublish = !!draft.title.trim() && !!draft.priceAed && !!draft.categoryId;
+  const canPublish = !!draft.title.trim() && !!draft.priceAed && !!draft.categoryId && draft.photos.length > 0;
   const sellerName = me?.displayName.split(' ')[0] ?? 'You';
   const sellerInitial = me?.avatarInitial ?? sellerName[0] ?? 'Y';
   const nbhName = me?.homeNeighborhood?.name.en ?? 'Dubai';
   const categoryName = categories.find((c) => c.id === draft.categoryId)?.name.en;
+  const conditionName = conditions.find((c) => c.id === draft.conditionId)?.name.en ?? null;
   const locLine = categoryName ? `${nbhName} · ${categoryName}` : nbhName;
-  const coverTint = draft.photoTints[0] ?? demoHue('preview-fallback');
-  const photoCount = draft.photoTints.length;
+  const cover = draft.photos[0];
+  const photoCount = draft.photos.length;
 
   const closeFlow = () => {
     reset();
@@ -46,10 +50,21 @@ export default function ListingPreview({ navigation }: Props) {
     navigation.popToTop();
   };
 
-  const publish = () => {
-    if (!canPublish) return;
-    createListing(draft);
-    closeFlow();
+  const publish = async () => {
+    if (!canPublish || publishing) return;
+    setPublishing(true);
+    try {
+      const id = await createListing(draft);
+      if (!id) {
+        Alert.alert('Could not publish', 'Please check your details and try again.');
+        return;
+      }
+      closeFlow();
+    } catch (e) {
+      Alert.alert('Could not publish', String((e as Error).message ?? e));
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const saveAsDraft = () => {
@@ -70,10 +85,15 @@ export default function ListingPreview({ navigation }: Props) {
         <Text style={s.subtitle}>Here's how buyers will see it.</Text>
 
         <View style={s.previewCard}>
-          <View style={[s.previewImage, { backgroundColor: coverTint }]}>
-            {draft.conditionLabel ? (
+          <View style={s.previewImage}>
+            {cover ? (
+              <Image source={{ uri: cover.uri }} style={s.previewImageFill} resizeMode="cover" />
+            ) : (
+              <View style={[s.previewImageFill, { backgroundColor: demoHue('preview-fallback') }]} />
+            )}
+            {conditionName ? (
               <View style={s.condBadge}>
-                <Text style={s.condBadgeText}>{draft.conditionLabel.toUpperCase()}</Text>
+                <Text style={s.condBadgeText}>{conditionName.toUpperCase()}</Text>
               </View>
             ) : null}
             {photoCount > 0 ? (
@@ -111,14 +131,14 @@ export default function ListingPreview({ navigation }: Props) {
             <BoltIcon size={14} color="#fff" />
           </View>
           <Text style={s.boostText}>
-            Use your <Text style={s.boostStrong}>50 AED welcome credit</Text> to boost for 24h?
+            Use your <Text style={s.boostStrong}>{appConfig ? `${appConfig.welcomeCreditAed} AED` : '—'} welcome credit</Text> to boost for 24h?
           </Text>
           <Toggle on={boost} onChange={setBoost} colorOn={theme.orange} />
         </View>
       </ScrollView>
-      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-        <PrimaryBtn variant="orange" onPress={publish} disabled={!canPublish}>
-          Publish listing
+      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <PrimaryBtn variant="orange" onPress={publish} disabled={!canPublish || publishing}>
+          {publishing ? 'Publishing…' : 'Publish listing'}
         </PrimaryBtn>
         <View style={s.draftRow}>
           <Text style={s.draftRowText}>Or </Text>
@@ -170,6 +190,11 @@ const s = StyleSheet.create({
   },
   previewImage: {
     aspectRatio: 1.4,
+    overflow: 'hidden',
+  },
+  previewImageFill: {
+    width: '100%',
+    height: '100%',
   },
   condBadge: {
     position: 'absolute',
@@ -293,8 +318,12 @@ const s = StyleSheet.create({
     fontFamily: FONT.bold,
   },
   actions: {
-    paddingHorizontal: 20,
-    gap: 10,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    gap: 8,
   },
   draftRow: {
     flexDirection: 'row',

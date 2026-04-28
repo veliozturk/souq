@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../../theme';
 import { useCategories, useFavoriteToggle, useListings, useMe } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import {
   PinIcon,
@@ -34,18 +35,20 @@ export default function BrowseHome({ navigation }: Props) {
     <View style={s.root}>
       <View style={[s.headerWrap, { paddingTop: insets.top + 12 }]}>
         <View style={s.headerRow}>
-          <View>
+          <Pressable onPress={() => navigation.navigate('LocationPicker')}>
             <Text style={s.eyebrow}>BROWSING</Text>
             <View style={s.locationRow}>
               <PinIcon size={12} />
               <Text style={s.location}>{location}</Text>
               <ChevronDownIcon size={10} />
             </View>
-          </View>
-          <View style={s.bellWrap}>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('Notifications')}
+            style={s.bellWrap}>
             <BellIcon size={16} />
             <View style={s.bellDot} />
-          </View>
+          </Pressable>
         </View>
 
         <Pressable
@@ -70,7 +73,7 @@ export default function BrowseHome({ navigation }: Props) {
             return (
               <Pressable
                 key={c.id}
-                onPress={() => navigation.navigate('CategoryResults', { query: c.name.en.toLowerCase() })}
+                onPress={() => navigation.navigate('CategoryResults', { categoryId: c.id, label: c.name.en })}
                 style={s.cat}>
                 <View
                   style={[
@@ -132,7 +135,7 @@ export default function BrowseHome({ navigation }: Props) {
                   <View style={s.card}>
                     <View style={[s.cardImage, { backgroundColor: hue }]}>
                       {thumb ? (
-                        <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} />
+                        <Image source={{ uri: photoUri(thumb) }} style={StyleSheet.absoluteFill} />
                       ) : null}
                       {it.isBoosted ? (
                         <View style={[s.badge, { backgroundColor: theme.orange }]}>
@@ -143,7 +146,11 @@ export default function BrowseHome({ navigation }: Props) {
                         onPress={() => toggle(it)}
                         hitSlop={8}
                         style={s.heartBtn}>
-                        <HeartIcon size={14} color={isFavorite(it.id) ? theme.orange : theme.ink} />
+                        <HeartIcon
+                          size={14}
+                          color={isFavorite(it.id) ? theme.orange : theme.ink}
+                          filled={isFavorite(it.id)}
+                        />
                       </Pressable>
                     </View>
                     <View style={s.cardBody}>

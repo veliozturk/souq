@@ -1,4 +1,5 @@
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ScrollView, View, Text, Pressable, StyleSheet, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
@@ -6,6 +7,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { CloseIcon, PlusIcon, InfoIcon } from '../../components/icons';
 import { useListingDraft } from './ListingDraftContext';
+import { pickPhotoFromLibrary } from './photoPicker';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPhotos'>;
@@ -14,8 +16,28 @@ const TOTAL_SLOTS = 9;
 
 export default function ListingPhotos({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { draft } = useListingDraft();
-  const PHOTO_FILLS = draft.photoTints;
+  const { draft, patch } = useListingDraft();
+  const [picking, setPicking] = useState(false);
+  const photos = draft.photos;
+
+  const pick = useCallback(async () => {
+    if (picking) return;
+    if (photos.length >= TOTAL_SLOTS) return;
+
+    setPicking(true);
+    try {
+      const processed = await pickPhotoFromLibrary();
+      if (processed) patch({ photos: [...photos, processed] });
+    } catch (e) {
+      Alert.alert('Photo picker error', String((e as Error).message ?? e));
+    } finally {
+      setPicking(false);
+    }
+  }, [picking, photos, patch]);
+
+  const removeAt = useCallback((index: number) => {
+    patch({ photos: photos.filter((_, i) => i !== index) });
+  }, [photos, patch]);
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -34,32 +56,33 @@ export default function ListingPhotos({ navigation }: Props) {
 
         <View style={s.grid}>
           {Array.from({ length: TOTAL_SLOTS }).map((_, i) => {
-            const photo = PHOTO_FILLS[i];
+            const photo = photos[i];
             if (photo) {
               return (
                 <View key={i} style={s.cell}>
-                  <View style={[s.tile, { backgroundColor: photo }]}>
+                  <View style={s.tile}>
+                    <Image source={{ uri: photo.uri }} style={s.tileImage} />
                     {i === 0 ? (
                       <View style={s.coverBadge}>
                         <Text style={s.coverBadgeText}>COVER</Text>
                       </View>
                     ) : null}
-                    <View style={s.removeBtn}>
+                    <Pressable onPress={() => removeAt(i)} style={s.removeBtn} hitSlop={6}>
                       <CloseIcon size={10} color="#fff" />
-                    </View>
+                    </Pressable>
                   </View>
                 </View>
               );
             }
-            const isAdd = i === PHOTO_FILLS.length;
+            const isAdd = i === photos.length;
             return (
               <View key={i} style={s.cell}>
                 {isAdd ? (
-                  <Pressable style={s.addTile}>
+                  <Pressable onPress={pick} style={s.addTile} disabled={picking}>
                     <View style={s.plusCircle}>
                       <PlusIcon size={12} color="#fff" />
                     </View>
-                    <Text style={s.addLabel}>Add</Text>
+                    <Text style={s.addLabel}>{picking ? '…' : 'Add'}</Text>
                   </Pressable>
                 ) : (
                   <View style={s.emptyTile}>
@@ -80,9 +103,9 @@ export default function ListingPhotos({ navigation }: Props) {
           </Text>
         </View>
       </ScrollView>
-      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+      <View style={[s.actions, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <PrimaryBtn onPress={() => navigation.navigate('ListingDetails')}>
-          {PHOTO_FILLS.length > 0 ? `Continue · ${PHOTO_FILLS.length} photo${PHOTO_FILLS.length === 1 ? '' : 's'}` : 'Continue'}
+          {photos.length > 0 ? `Continue · ${photos.length} photo${photos.length === 1 ? '' : 's'}` : 'Continue'}
         </PrimaryBtn>
       </View>
     </View>
@@ -131,6 +154,11 @@ const s = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: theme.surface,
+  },
+  tileImage: {
+    width: '100%',
+    height: '100%',
   },
   coverBadge: {
     position: 'absolute',
@@ -226,6 +254,10 @@ const s = StyleSheet.create({
     lineHeight: 18,
   },
   actions: {
-    paddingHorizontal: 20,
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.line,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
 });

@@ -11,6 +11,7 @@ import {
   MessageBubbleIcon,
 } from '../../components/icons';
 import { useUser, useListings } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import type { BrowseStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BrowseStackParamList, 'SellerProfile'>;
@@ -111,7 +112,7 @@ export default function SellerProfile({ navigation, route }: Props) {
                   style={s.itemTile}>
                   <View style={[s.itemImg, { backgroundColor: theme.blueSoft }]}>
                     {thumb ? (
-                      <Image source={{ uri: thumb }} style={StyleSheet.absoluteFill} />
+                      <Image source={{ uri: photoUri(thumb) }} style={StyleSheet.absoluteFill} />
                     ) : null}
                   </View>
                   <View style={s.itemBody}>

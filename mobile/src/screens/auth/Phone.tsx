@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -15,17 +16,42 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { FieldLabel } from '../../components/FieldLabel';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { ChevronDownIcon, LockIcon, UAEFlag } from '../../components/icons';
+import { useAuthStub } from '../../auth/AuthStub';
+import { verifyOtp } from '../../api/auth';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Phone'>;
 
+const DEV_DEMO_PHONE = '+971 50 123 4567';
+
 export default function Phone({ navigation }: Props) {
+  const { setSignupDraft, signIn } = useAuthStub();
   const [digits, setDigits] = useState('50 123 4567');
+  const [devSubmitting, setDevSubmitting] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const goToOtp = () => {
+    const phone = '+971 ' + digits;
+    setSignupDraft({ phone });
+    navigation.navigate('OTP', { phone });
+  };
+
+  const devSignIn = async () => {
+    if (devSubmitting) return;
+    setDevSubmitting(true);
+    try {
+      const { user, sessionId } = await verifyOtp(DEV_DEMO_PHONE, '000000');
+      signIn(user, sessionId);
+    } catch {
+      // best-effort dev shortcut; fall through silently
+    } finally {
+      setDevSubmitting(false);
+    }
+  };
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
-      <MinimalHeader step={0} onBack={() => navigation.goBack()} onSkip={() => navigation.navigate('OTP', { phone: '+971 50 123 4567' })} />
+      <MinimalHeader step={0} onBack={() => navigation.goBack()} onSkip={goToOtp} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={s.flex}
@@ -66,9 +92,16 @@ export default function Phone({ navigation }: Props) {
         </ScrollView>
 
         <View style={[s.actions, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
-          <PrimaryBtn onPress={() => navigation.navigate('OTP', { phone: '+971 ' + digits })}>
+          <PrimaryBtn onPress={goToOtp}>
             Send code
           </PrimaryBtn>
+          {__DEV__ ? (
+            <Pressable onPress={devSignIn} style={s.devBtn} disabled={devSubmitting}>
+              <Text style={s.devBtnText}>
+                {devSubmitting ? 'Signing in…' : 'Sign in as test user (dev only)'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -155,5 +188,15 @@ const s = StyleSheet.create({
   },
   actions: {
     paddingHorizontal: 24,
+  },
+  devBtn: {
+    marginTop: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  devBtnText: {
+    fontFamily: FONT.medium,
+    fontSize: 13,
+    color: theme.inkDim,
   },
 });

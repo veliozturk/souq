@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { SearchIcon, MoreDotsIcon } from '../../components/icons';
 import { useMe, useMyListings } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import type { MeStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<MeStackParamList, 'MyListings'>;
 
-type TabId = 'active' | 'inactive' | 'sold';
+type TabId = 'active' | 'paused' | 'sold';
 
 export default function MyListings({ navigation }: Props) {
   const [tab, setTab] = useState<TabId>('active');
@@ -22,15 +23,14 @@ export default function MyListings({ navigation }: Props) {
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'active', label: `Active · ${me?.counts.activeListings ?? '—'}` },
-    { id: 'inactive', label: `Inactive · ${me?.counts.inactiveListings ?? '—'}` },
+    { id: 'paused', label: `Inactive · ${me?.counts.inactiveListings ?? '—'}` },
     { id: 'sold', label: `Sold · ${me?.counts.soldListings ?? '—'}` },
   ];
 
-  const views7d = listings.reduce((sum, l) => sum + (l.sellerStats?.viewsCount ?? 0), 0);
   const stats = [
     { k: 'ACTIVE', v: String(me?.counts.activeListings ?? '—'), c: theme.blue },
-    { k: 'VIEWS 7D', v: views7d > 0 ? String(views7d) : '—', c: theme.ink },
-    { k: 'EARNED', v: '—', c: theme.orange },
+    { k: 'VIEWS 7D', v: me ? String(me.sellerStats.views7d) : '—', c: theme.ink },
+    { k: 'EARNED', v: me ? `AED ${me.sellerStats.earnedAed.toLocaleString()}` : '—', c: theme.orange },
   ];
 
   return (
@@ -67,43 +67,50 @@ export default function MyListings({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
-        {tab === 'active' &&
-          listings.map((l) => (
-            <Pressable
-              key={l.id}
-              onPress={() => navigation.navigate('ListingAdmin', { id: l.id })}
-              style={s.row}>
-              <View style={[s.thumb, { backgroundColor: demoHue(l.id) }]}>
-                {l.isBoosted ? (
-                  <View style={s.boostBadge}>
-                    <Text style={s.boostBadgeText}>BOOSTED</Text>
-                  </View>
+        {listings.map((l) => (
+          <Pressable
+            key={l.id}
+            onPress={() => navigation.navigate('ListingAdmin', { id: l.id })}
+            style={s.row}>
+            <View style={[s.thumb, { backgroundColor: demoHue(l.id) }]}>
+              {l.coverPhoto ? (
+                <Image
+                  source={{ uri: photoUri(l.coverPhoto.thumbUrl ?? l.coverPhoto.url) }}
+                  style={StyleSheet.absoluteFill}
+                />
+              ) : null}
+              {l.isBoosted ? (
+                <View style={s.boostBadge}>
+                  <Text style={s.boostBadgeText}>BOOSTED</Text>
+                </View>
+              ) : null}
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.title} numberOfLines={1}>
+                {l.title.original}
+              </Text>
+              <Text style={s.price}>AED {l.priceAed.toLocaleString()}</Text>
+              <View style={s.metaRow}>
+                <Text style={s.meta}>{l.sellerStats?.viewsCount ?? 0} views</Text>
+                <Text style={s.meta}>{l.sellerStats?.messagesCount ?? 0} messages</Text>
+                {l.sellerStats && l.sellerStats.pendingOffersCount > 0 ? (
+                  <Text style={s.metaOffers}>● {l.sellerStats.pendingOffersCount} offers</Text>
                 ) : null}
               </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={s.title} numberOfLines={1}>
-                  {l.title.original}
-                </Text>
-                <Text style={s.price}>AED {l.priceAed.toLocaleString()}</Text>
-                <View style={s.metaRow}>
-                  <Text style={s.meta}>{l.sellerStats?.viewsCount ?? 0} views</Text>
-                  <Text style={s.meta}>{l.sellerStats?.messagesCount ?? 0} messages</Text>
-                  {l.sellerStats && l.sellerStats.pendingOffersCount > 0 ? (
-                    <Text style={s.metaOffers}>● {l.sellerStats.pendingOffersCount} offers</Text>
-                  ) : null}
-                </View>
-              </View>
-              <View style={s.moreBtn}>
-                <MoreDotsIcon size={14} color={theme.inkDim} />
-              </View>
-            </Pressable>
-          ))}
-        {tab !== 'active' && (
+            </View>
+            <View style={s.moreBtn}>
+              <MoreDotsIcon size={14} color={theme.inkDim} />
+            </View>
+          </Pressable>
+        ))}
+        {listings.length === 0 && (
           <View style={s.empty}>
             <Text style={s.emptyText}>
-              {tab === 'inactive'
-                ? 'No inactive listings right now.'
-                : 'Your sold items will appear here.'}
+              {tab === 'active'
+                ? 'No active listings yet.'
+                : tab === 'paused'
+                  ? 'No inactive listings right now.'
+                  : 'Your sold items will appear here.'}
             </Text>
           </View>
         )}

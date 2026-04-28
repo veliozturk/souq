@@ -8,17 +8,20 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Image
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { Bubble } from '../../components/Bubble';
 import { MoreDotsIcon, PlusIcon, SendIcon } from '../../components/icons';
-import { useConversations, useDecideOffer, useMarkConversationRead, useMessages, useSendMessage } from '../../api/queries';
+import { useConversations, useDecideOffer, useListing, useMarkConversationRead, useMessages, useSendMessage } from '../../api/queries';
 import { demoHue } from '../../utils/demoHue';
-import type { InboxStackParamList } from '../../navigation/types';
+import { photoUri } from '../../api/photoUri';
+import type { InboxStackParamList, RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<InboxStackParamList, 'Chat'>;
 
@@ -34,6 +37,7 @@ export default function Chat({ navigation, route }: Props) {
   const sendMessage = useSendMessage();
   const markRead = useMarkConversationRead();
   const decideOffer = useDecideOffer();
+  const rootNav = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     markRead(threadId);
@@ -51,6 +55,9 @@ export default function Chat({ navigation, route }: Props) {
   const itemTitle = conversation?.listing.title ?? '';
   const itemPriceAed = conversation?.listing.priceAed;
   const itemHue = demoHue(conversation?.listing.id ?? threadId);
+  const { data: listingDetail } = useListing(conversation?.listing.id);
+  const coverPhoto = listingDetail?.photos[0];
+  const coverThumb = coverPhoto?.thumbUrl ?? coverPhoto?.url ?? null;
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -79,7 +86,11 @@ export default function Chat({ navigation, route }: Props) {
 
       {conversation ? (
         <View style={s.itemContext}>
-          <View style={[s.itemThumb, { backgroundColor: itemHue }]} />
+          <View style={[s.itemThumb, { backgroundColor: itemHue }]}>
+            {coverThumb ? (
+              <Image source={{ uri: photoUri(coverThumb) }} style={StyleSheet.absoluteFill} />
+            ) : null}
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={s.itemTitle}>{itemTitle}</Text>
             <Text style={s.itemPrice}>AED {itemPriceAed?.toLocaleString()}</Text>
@@ -124,7 +135,16 @@ export default function Chat({ navigation, route }: Props) {
                         style={s.offerActionBtn}>
                         <Text style={s.offerActionDecline}>Decline</Text>
                       </Pressable>
-                      <Pressable style={[s.offerActionBtn, s.offerActionDivider]}>
+                      <Pressable
+                        onPress={() =>
+                          rootNav.navigate('CounterOffer', {
+                            conversationId: threadId,
+                            originalOfferId: offer.id,
+                            originalOfferAed: offer.priceAed,
+                            listedPriceAed: offer.listedPriceAed,
+                          })
+                        }
+                        style={[s.offerActionBtn, s.offerActionDivider]}>
                         <Text style={s.offerActionCounter}>Counter</Text>
                       </Pressable>
                       <Pressable
@@ -257,6 +277,7 @@ const s = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 9,
+    overflow: 'hidden',
   },
   itemTitle: {
     fontFamily: FONT.semibold,

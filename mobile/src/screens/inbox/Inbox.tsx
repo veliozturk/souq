@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,9 +15,23 @@ const FILTERS = ['All', 'Buying', 'Selling', 'Offers'];
 
 export default function Inbox({ navigation }: Props) {
   const [filter, setFilter] = useState('All');
+  const [searchText, setSearchText] = useState('');
   const insets = useSafeAreaInsets();
   const { data: conversations = [] } = useConversations();
   const unreadCount = conversations.filter((c) => c.unread).length;
+
+  const q = searchText.trim().toLowerCase();
+  const visibleConversations = conversations.filter((c) => {
+    if (filter === 'Buying' && c.iAmSeller) return false;
+    if (filter === 'Selling' && !c.iAmSeller) return false;
+    if (filter === 'Offers' && !c.hasOffer) return false;
+    if (!q) return true;
+    return (
+      c.peer.displayName.toLowerCase().includes(q) ||
+      c.listing.title.toLowerCase().includes(q) ||
+      c.lastMessage.text.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <View style={s.root}>
@@ -32,7 +46,16 @@ export default function Inbox({ navigation }: Props) {
         </View>
         <View style={s.search}>
           <SearchIcon size={14} color={theme.inkDim} />
-          <Text style={s.searchText}>Search messages</Text>
+          <TextInput
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search messages"
+            placeholderTextColor={theme.inkDim}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+            style={s.searchInput}
+          />
         </View>
         <View style={s.filterRow}>
           {FILTERS.map((f) => {
@@ -50,11 +73,14 @@ export default function Inbox({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
-        {conversations.map((c, i) => (
+        {visibleConversations.length === 0 ? (
+          <Text style={s.emptyText}>No conversations</Text>
+        ) : null}
+        {visibleConversations.map((c, i) => (
           <Pressable
             key={c.id}
             onPress={() => navigation.navigate('Chat', { threadId: c.id })}
-            style={[s.row, i < conversations.length - 1 && s.rowDivider]}>
+            style={[s.row, i < visibleConversations.length - 1 && s.rowDivider]}>
             <View style={s.avatarWrap}>
               <View style={[s.itemThumb, { backgroundColor: demoHue(c.listing.id) }]} />
               <LinearGradient
@@ -143,7 +169,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
   },
-  searchText: {
+  searchInput: {
+    flex: 1,
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    color: theme.ink,
+    padding: 0,
+  },
+  emptyText: {
+    marginTop: 32,
+    textAlign: 'center',
     fontFamily: FONT.regular,
     fontSize: 14,
     color: theme.inkDim,

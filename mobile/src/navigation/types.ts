@@ -13,9 +13,11 @@ export type AuthStackParamList = {
 // Browse stack inside HomeTab
 export type BrowseStackParamList = {
   BrowseHome: undefined;
-  CategoryResults: { query?: string };
+  CategoryResults: { query?: string; categoryId?: string; label?: string };
   ItemDetail: { id: string };
   SellerProfile: { id: string };
+  Notifications: undefined;
+  LocationPicker: undefined;
 };
 
 // Listing stack — modal "create listing" wizard
@@ -40,6 +42,8 @@ export type MeStackParamList = {
   MeProfile: undefined;
   MyListings: undefined;
   ListingAdmin: { id: string };
+  EditListing: { id: string };
+  EditPhotos: { id: string };
 };
 
 // Bottom tabs
@@ -57,4 +61,10 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabsParamList>;
   SendMessage: { itemId: string; sellerId: string };
   MakeOffer: { itemId: string; sellerId: string };
+  CounterOffer: {
+    conversationId: string;
+    originalOfferId: string;
+    originalOfferAed: number;
+    listedPriceAed: number;
+  };
 };

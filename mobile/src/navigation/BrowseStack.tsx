@@ -4,6 +4,8 @@ import Home from '../screens/browse/Home';
 import CategoryResults from '../screens/browse/CategoryResults';
 import ItemDetail from '../screens/browse/ItemDetail';
 import SellerProfile from '../screens/browse/SellerProfile';
+import Notifications from '../screens/browse/Notifications';
+import LocationPicker from '../screens/browse/LocationPicker';
 
 const Stack = createNativeStackNavigator<BrowseStackParamList>();
 
@@ -14,6 +16,8 @@ export function BrowseStack() {
       <Stack.Screen name="CategoryResults" component={CategoryResults} />
       <Stack.Screen name="ItemDetail" component={ItemDetail} />
       <Stack.Screen name="SellerProfile" component={SellerProfile} />
+      <Stack.Screen name="Notifications" component={Notifications} />
+      <Stack.Screen name="LocationPicker" component={LocationPicker} />
     </Stack.Navigator>
   );
 }
