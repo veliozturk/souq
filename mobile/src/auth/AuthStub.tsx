@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { Me } from '../api/types';
 import { logout as apiLogout } from '../api/auth';
+import { apiGet } from '../api/client';
 import { getSessionId, setSessionId } from './sessionRef';
 import { loadSession, saveSession, clearSession } from './sessionStorage';
 
@@ -45,14 +46,27 @@ export function AuthStubProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadSession().then((stored) => {
+    (async () => {
+      const stored = await loadSession();
       if (cancelled) return;
-      if (stored) {
-        setSessionId(stored.sessionId);
-        setCurrentUser(stored.user);
+      if (!stored) {
+        setHydrating(false);
+        return;
       }
-      setHydrating(false);
-    });
+      setSessionId(stored.sessionId);
+      try {
+        const fresh = await apiGet<Me>(`/api/me?userId=${stored.user.id}`);
+        if (cancelled) return;
+        setCurrentUser(fresh);
+        await saveSession({ user: fresh, sessionId: stored.sessionId });
+      } catch {
+        if (cancelled) return;
+        setSessionId(null);
+        await clearSession();
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    })();
     return () => {
       cancelled = true;
     };

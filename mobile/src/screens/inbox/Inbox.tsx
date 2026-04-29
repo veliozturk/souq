@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet, TextInput, Image } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ScrollView, View, Text, Pressable, StyleSheet, TextInput, Image, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { SearchIcon } from '../../components/icons';
@@ -18,8 +19,14 @@ export default function Inbox({ navigation }: Props) {
   const [filter, setFilter] = useState('All');
   const [searchText, setSearchText] = useState('');
   const insets = useSafeAreaInsets();
-  const { data: conversations = [] } = useConversations();
+  const { data: conversations = [], refetch, isRefetching } = useConversations();
   const unreadCount = conversations.filter((c) => c.unread).length;
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const q = searchText.trim().toLowerCase();
   const visibleConversations = conversations.filter((c) => {
@@ -73,7 +80,12 @@ export default function Inbox({ navigation }: Props) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={s.listContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={s.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.inkDim} />
+        }>
         {visibleConversations.length === 0 ? (
           <Text style={s.emptyText}>No conversations</Text>
         ) : null}

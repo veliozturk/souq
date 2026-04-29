@@ -8,8 +8,9 @@ Bilingual (EN/AR, RTL) C2C second-hand marketplace for Dubai. Mobile-first.
 |---|---|
 | **Database** | PostgreSQL 18 schema in [db/schema.sql](db/schema.sql) — 20 tables in the `souq` schema. Design rationale in [db-design.md](db-design.md), per-field semantics in [db-design-fields.md](db-design-fields.md). |
 | **Backend** | ASP.NET Core 10 scaffold in [api/](api/). `/healthz` + DB ping working. No entities, no auth, no real endpoints yet. |
-| **Marketplace UI** | React 18 + Vite prototype in [src/](src/) with hardcoded data — signup, listing flow, browse, messaging, dashboard, mock admin screens. |
-| **Admin panel** | Not started. Will be Vite + React + TypeScript + shadcn/ui, separate `admin/` directory. |
+| **Mobile app** | Expo / React Native + TypeScript in [mobile/](mobile/). **This is the primary consumer surface — when the user says "the app", "frontend", or "UI" without qualifying, they mean this.** |
+| **Web prototype** | React 18 + Vite in [src/](src/) with hardcoded data — older prototype kept around but not the active consumer target. Only touch when explicitly asked about "web" or "src". |
+| **Admin panel** | Vite + React + TypeScript in [admin/](admin/). |
 | **Deployment** | Not deployed. Target: DigitalOcean BLR1. |
 
 ## Repo layout
@@ -18,7 +19,9 @@ Bilingual (EN/AR, RTL) C2C second-hand marketplace for Dubai. Mobile-first.
 souq1/
 ├── api/                  ASP.NET Core 10 backend (Souq.Api.csproj at root, single project)
 ├── db/schema.sql         Authoritative PostgreSQL schema; all objects in `souq` schema
-├── src/                  React/Vite consumer marketplace prototype
+├── mobile/               Expo / React Native consumer app — DEFAULT target for "frontend"/"UI"/"the app"
+├── admin/                Vite + React + TS admin panel
+├── src/                  Older React/Vite web prototype (not the active consumer target)
 ├── db-design.md          Schema design rationale + v2 deferrals (reviews, payments)
 └── db-design-fields.md   Per-field semantics (bilingual JSONB shape, soft-delete rules)
 ```
@@ -82,6 +85,7 @@ These were debated and locked in [a planning session](~/.claude/plans/it-will-be
 
 ## Working with this codebase
 
+- **Default surface is mobile.** When the user says "the app", "frontend", "UI", "screen", or names a feature without specifying a surface, they mean [mobile/](mobile/) (Expo / React Native). Only touch the [src/](src/) web prototype if they explicitly say "web" or "src". The admin panel is its own thing — only when they say "admin".
 - When asked for "specs" or "recommendations", deliver a decisions document — not implementation steps, repo restructures, or verification checklists.
 - When implementing backend code: match schema field names exactly (`auth0_sub`, role flags, `bst_boosts.starts_at/ends_at`, JSONB `{original,en,ar}` shape).
 - Don't add Redis, SignalR, Hangfire, OpenSearch, or OpenTelemetry without one of the deferred-list triggers firing — see `~/.claude/projects/-Users-veliozturk-projects-souq1/memory/project_souq_overview.md`.

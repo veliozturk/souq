@@ -121,30 +121,30 @@ BEGIN
     -- ───────── users ─────────
     INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
     VALUES ('seed|aisha', '971501234567', 'Aisha Al Mansouri', 'aisha_m',  'A', 1, 0, 2024, n_marina) RETURNING id INTO u_aisha;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|omar',   'Omar Khalid',       'omar_k',   'O', 0, 0, 2025, n_marina) RETURNING id INTO u_omar;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|priya',  'Priya Desai',       'priya_d',  'P', 1, 0, 2022, n_jlt)    RETURNING id INTO u_priya;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|rami',   'Rami Hassan',       'rami_h',   'R', 1, 0, 2024, n_dt)     RETURNING id INTO u_rami;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|khalid', 'Khalid Al Suwaidi', 'khalid_s', 'K', 1, 0, 2024, n_jum)    RETURNING id INTO u_khalid;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|sara',   'Sara Damiani',      'sara_d',   'S', 0, 1, 2025, n_bb)     RETURNING id INTO u_sara;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|ahmed',  'Ahmed Saleh',       'ahmed_s',  'A', 0, 1, 2025, n_jlt)    RETURNING id INTO u_ahmed;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|layla',  'Layla Rahimi',      'layla_r',  'L', 1, 0, 2024, n_marina) RETURNING id INTO u_layla;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|hassan', 'Hassan Tariq',      'hassan_t', 'H', 0, 1, 2025, n_bb)     RETURNING id INTO u_hassan;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|noura',  'Noura Al Falasi',   'noura_f',  'N', 1, 0, 2024, n_jbr)    RETURNING id INTO u_noura;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|rashid', 'Rashid Al Nuaimi',  'rashid_n', 'R', 1, 0, 2023, n_jum)    RETURNING id INTO u_rashid;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|fatima', 'Fatima Lootah',     'fatima_l', 'F', 1, 0, 2024, n_marina) RETURNING id INTO u_fatima;
-    INSERT INTO usr_users (auth0_sub, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
-    VALUES ('seed|yusuf',  'Yusuf Karam',       'yusuf_k',  'Y', 0, 1, 2025, n_dt)     RETURNING id INTO u_yusuf;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|omar',   '971501234561', 'Omar Khalid',       'omar_k',   'O', 0, 0, 2025, n_marina) RETURNING id INTO u_omar;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|priya',  '971501234562', 'Priya Desai',       'priya_d',  'P', 1, 0, 2022, n_jlt)    RETURNING id INTO u_priya;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|rami',   '971501234563', 'Rami Hassan',       'rami_h',   'R', 1, 0, 2024, n_dt)     RETURNING id INTO u_rami;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|khalid', '971501234564', 'Khalid Al Suwaidi', 'khalid_s', 'K', 1, 0, 2024, n_jum)    RETURNING id INTO u_khalid;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|sara',   '971501234565', 'Sara Damiani',      'sara_d',   'S', 0, 1, 2025, n_bb)     RETURNING id INTO u_sara;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|ahmed',  '971501234566', 'Ahmed Saleh',       'ahmed_s',  'A', 0, 1, 2025, n_jlt)    RETURNING id INTO u_ahmed;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|layla',  '971501234568', 'Layla Rahimi',      'layla_r',  'L', 1, 0, 2024, n_marina) RETURNING id INTO u_layla;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|hassan', '971501234569', 'Hassan Tariq',      'hassan_t', 'H', 0, 1, 2025, n_bb)     RETURNING id INTO u_hassan;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|noura',  '971501234560', 'Noura Al Falasi',   'noura_f',  'N', 1, 0, 2024, n_jbr)    RETURNING id INTO u_noura;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|rashid', '971501234570', 'Rashid Al Nuaimi',  'rashid_n', 'R', 1, 0, 2023, n_jum)    RETURNING id INTO u_rashid;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|fatima', '971501234571', 'Fatima Lootah',     'fatima_l', 'F', 1, 0, 2024, n_marina) RETURNING id INTO u_fatima;
+    INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
+    VALUES ('seed|yusuf',  '971501234572', 'Yusuf Karam',       'yusuf_k',  'Y', 0, 1, 2025, n_dt)     RETURNING id INTO u_yusuf;
 
     -- ───────── listings ─────────
     INSERT INTO lst_listings (seller_id, category_id, condition_id, neighborhood_id, title, description, price_aed, previous_price_aed, status, published_at)

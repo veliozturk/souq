@@ -1,5 +1,7 @@
-import { ActivityIndicator, Alert, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../theme';
 import { HeartIcon } from '../components/icons';
@@ -12,8 +14,14 @@ type Props = BottomTabScreenProps<MainTabsParamList, 'SavedTab'>;
 
 export default function Saved({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { data: favorites = [], isPending, isError, refetch } = useFavorites();
+  const { data: favorites = [], isPending, isError, isRefetching, refetch } = useFavorites();
   const { toggle } = useFavoriteToggle();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const confirmRemove = (it: (typeof favorites)[number]) => {
     Alert.alert(
@@ -49,7 +57,11 @@ export default function Saved({ navigation }: Props) {
           <Text style={s.statusText}>You haven't saved any items yet.</Text>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.inkDim} />
+          }>
           <View style={s.grid}>
             {favorites.map((it) => {
               const thumb = it.coverPhoto?.thumbUrl ?? it.coverPhoto?.url ?? null;
