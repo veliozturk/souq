@@ -51,6 +51,30 @@ public sealed class UsersController(SouqDbContext db, UsersService users) : Cont
         return user is null ? NotFound() : Ok(await users.GetMeDtoAsync(user));
     }
 
+    public sealed record PatchMeRequest(Guid? HomeNeighborhoodId);
+
+    [HttpPatch("me")]
+    public async Task<IActionResult> PatchMe([FromQuery] Guid? userId, [FromBody] PatchMeRequest body)
+    {
+        if (userId is null) return BadRequest(new { error = "userId is required (auth deferred)" });
+
+        var user = await db.Users
+            .Include(u => u.HomeNeighborhood)
+            .FirstOrDefaultAsync(u => u.Id == userId.Value && u.DeletedAt == null);
+        if (user is null) return NotFound();
+
+        if (body.HomeNeighborhoodId is { } nid)
+        {
+            var nbh = await db.Neighborhoods.FindAsync(nid);
+            if (nbh is null) return BadRequest(new { error = "neighborhoodId not found" });
+            user.HomeNeighborhoodId = nid;
+        }
+
+        await db.SaveChangesAsync();
+        await db.Entry(user).Reference(u => u.HomeNeighborhood).LoadAsync();
+        return Ok(await users.GetMeDtoAsync(user));
+    }
+
     [HttpGet("me/favorites")]
     public async Task<IActionResult> Favorites([FromQuery] Guid? userId)
     {
@@ -132,6 +156,14 @@ public sealed class UsersController(SouqDbContext db, UsersService users) : Cont
                     id = o.Listing.Id,
                     title = o.Listing.Title,
                     priceAed = o.Listing.PriceAed,
+                    coverPhoto = o.Listing.Photos
+                        .OrderBy(p => p.SortOrder)
+                        .Select(p => new
+                        {
+                            url = p.Url.StartsWith("http") ? p.Url : "/uploads/" + p.Url,
+                            thumbUrl = p.ThumbUrl == null ? null : (p.ThumbUrl.StartsWith("http") ? p.ThumbUrl : "/uploads/" + p.ThumbUrl),
+                        })
+                        .FirstOrDefault(),
                 },
                 offerAed = o.AmountAed,
                 state = o.Status,

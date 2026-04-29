@@ -24,7 +24,17 @@ public sealed class ConversationsController(SouqDbContext db) : ControllerBase
             {
                 conv = c,
                 peer = c.BuyerId == me ? c.Seller : c.Buyer,
-                listing = c.Listing,
+                listingId = c.Listing.Id,
+                listingTitle = c.Listing.Title,
+                listingPriceAed = c.Listing.PriceAed,
+                listingCoverPhoto = c.Listing.Photos
+                    .OrderBy(p => p.SortOrder)
+                    .Select(p => new
+                    {
+                        url = p.Url.StartsWith("http") ? p.Url : "/uploads/" + p.Url,
+                        thumbUrl = p.ThumbUrl == null ? null : (p.ThumbUrl.StartsWith("http") ? p.ThumbUrl : "/uploads/" + p.ThumbUrl),
+                    })
+                    .FirstOrDefault(),
                 lastMessage = db.Messages
                     .Where(m => m.ConversationId == c.Id && m.DeletedAt == null)
                     .OrderByDescending(m => m.CreatedAt)
@@ -53,9 +63,10 @@ public sealed class ConversationsController(SouqDbContext db) : ControllerBase
             },
             listing = new
             {
-                id = r.listing.Id,
-                title = r.listing.Title,
-                priceAed = r.listing.PriceAed,
+                id = r.listingId,
+                title = r.listingTitle,
+                priceAed = r.listingPriceAed,
+                coverPhoto = r.listingCoverPhoto,
             },
             lastMessage = r.lastMessage is null ? null : new
             {

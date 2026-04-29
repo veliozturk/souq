@@ -1,9 +1,10 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { BackBtn } from '../../components/BackBtn';
 import { useOffers } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import type { OfferState } from '../../api/types';
 import { demoHue } from '../../utils/demoHue';
 import type { InboxStackParamList } from '../../navigation/types';
@@ -43,7 +44,14 @@ export default function Offers({ navigation }: Props) {
             <View
               key={o.id}
               style={[s.card, o.state === 'new' && s.cardNew]}>
-              <View style={[s.thumb, { backgroundColor: demoHue(o.listing.id) }]} />
+              <View style={[s.thumb, { backgroundColor: demoHue(o.listing.id) }]}>
+                {o.listing.coverPhoto ? (
+                  <Image
+                    source={{ uri: photoUri(o.listing.coverPhoto.thumbUrl ?? o.listing.coverPhoto.url) }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                ) : null}
+              </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={s.cardHead}>
                   <Text style={s.buyer} numberOfLines={1}>

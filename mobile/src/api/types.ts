@@ -97,6 +97,7 @@ export type ListingDetail = {
 export type ListingFilters = {
   categoryId?: string;
   sellerId?: string;
+  neighborhoodId?: string;
   q?: string;
   limit?: number;
   offset?: number;
@@ -151,7 +152,12 @@ export type ConversationPeer = {
 export type Conversation = {
   id: string;
   peer: ConversationPeer;
-  listing: { id: string; title: string; priceAed: number };
+  listing: {
+    id: string;
+    title: string;
+    priceAed: number;
+    coverPhoto: { url: string; thumbUrl: string | null } | null;
+  };
   lastMessage: {
     text: string;
     createdAt: string;
@@ -185,7 +191,12 @@ export type Message = {
 export type Offer = {
   id: string;
   buyer: { id: string; displayName: string; avatarInitial: string | null };
-  listing: { id: string; title: string; priceAed: number };
+  listing: {
+    id: string;
+    title: string;
+    priceAed: number;
+    coverPhoto: { url: string; thumbUrl: string | null } | null;
+  };
   offerAed: number;
   state: OfferState;
   createdAt: string;

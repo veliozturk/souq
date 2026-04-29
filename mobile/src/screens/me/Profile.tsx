@@ -41,7 +41,7 @@ type Row = {
 };
 
 export default function MeProfile({ navigation }: Props) {
-  const { signOut } = useAuthStub();
+  const { signOut, currentUser } = useAuthStub();
   const insets = useSafeAreaInsets();
   const { data: me } = useMe();
 
@@ -52,7 +52,8 @@ export default function MeProfile({ navigation }: Props) {
     me?.ratingAvg != null
       ? `${handle} · ★ ${me.ratingAvg} · ${me.soldCount} sold`
       : handle;
-  const locationLabel = me?.homeNeighborhood?.name.en.toUpperCase() ?? '';
+  const homeNeighborhood = currentUser?.homeNeighborhood ?? null;
+  const locationLabel = homeNeighborhood?.name.en.toUpperCase() ?? '';
 
   const groups: { header: string; rows: Row[] }[] = [
     {
@@ -84,13 +85,13 @@ export default function MeProfile({ navigation }: Props) {
     {
       header: 'BUYING',
       rows: [
-        {
+        /*{
           label: 'Saved items',
           right: me ? String(me.counts.savedItems) : '',
           icon: <HeartIcon size={16} color={theme.blue} />,
           iconBg: theme.blueSoft,
           onPress: () => navigation.getParent<any>()?.navigate('SavedTab'),
-        },
+        },*/
         {
           label: 'Purchase history',
           icon: <ReceiptIcon size={16} color={theme.blue} />,
@@ -107,7 +108,7 @@ export default function MeProfile({ navigation }: Props) {
           iconBg: theme.blueSoft,
         },
         {
-          label: me?.homeNeighborhood ? `Location · ${me.homeNeighborhood.name.en}` : 'Location',
+          label: homeNeighborhood ? `Location · ${homeNeighborhood.name.en}` : 'Location',
           icon: <MapPinSmallIcon size={16} color={theme.blue} />,
           iconBg: theme.blueSoft,
         },

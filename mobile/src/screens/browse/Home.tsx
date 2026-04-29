@@ -5,7 +5,8 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../../theme';
-import { useCategories, useFavoriteToggle, useListings, useMe } from '../../api/queries';
+import { useCategories, useFavoriteToggle, useListings } from '../../api/queries';
+import { useAuthStub } from '../../auth/AuthStub';
 import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import {
@@ -25,11 +26,11 @@ type Props = CompositeScreenProps<
 
 export default function BrowseHome({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { currentUser } = useAuthStub();
   const categoriesQ = useCategories();
-  const listingsQ = useListings({ limit: 6 });
-  const { data: me } = useMe();
+  const listingsQ = useListings({ limit: 6, neighborhoodId: currentUser?.homeNeighborhood?.id });
   const { isFavorite, toggle } = useFavoriteToggle();
-  const location = me?.homeNeighborhood?.name.en ?? 'Dubai';
+  const location = currentUser?.homeNeighborhood?.name.en ?? 'Dubai';
 
   return (
     <View style={s.root}>

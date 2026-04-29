@@ -12,6 +12,7 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
     public async Task<IActionResult> Browse(
         [FromQuery] Guid? categoryId,
         [FromQuery] Guid? sellerId,
+        [FromQuery] Guid? neighborhoodId,
         [FromQuery] string? q,
         [FromQuery] string? status,
         [FromQuery] int? limit,
@@ -32,6 +33,7 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
 
         if (categoryId.HasValue) query = query.Where(l => l.CategoryId == categoryId.Value);
         if (sellerId.HasValue) query = query.Where(l => l.SellerId == sellerId.Value);
+        if (neighborhoodId.HasValue) query = query.Where(l => l.NeighborhoodId == neighborhoodId.Value);
         if (!string.IsNullOrWhiteSpace(q))
         {
             var pattern = $"%{q}%";

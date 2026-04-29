@@ -746,11 +746,11 @@ export function ProfileScreen({ onMyListings, onOffers, onTab }) {
     {
       header: 'Buying',
       rows: [
-        { label: 'Saved items', right: '23', ic: (
+        /*{ label: 'Saved items', right: '23', ic: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M8 14l-5-4a3.5 3.5 0 115-5 3.5 3.5 0 115 5l-5 4z" stroke={t.blue} strokeWidth="1.5" />
           </svg>
-        ), iconBg: t.blueSoft },
+        ), iconBg: t.blueSoft }, */
         { label: 'Purchase history', ic: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M2 4h2l2 8h7l2-6H5" stroke={t.blue} strokeWidth="1.5" fill="none" strokeLinejoin="round" />

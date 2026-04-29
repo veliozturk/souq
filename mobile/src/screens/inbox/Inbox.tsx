@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, TextInput, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../../theme';
 import { SearchIcon } from '../../components/icons';
 import { useConversations } from '../../api/queries';
+import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import type { InboxStackParamList } from '../../navigation/types';
 
@@ -82,7 +83,14 @@ export default function Inbox({ navigation }: Props) {
             onPress={() => navigation.navigate('Chat', { threadId: c.id })}
             style={[s.row, i < visibleConversations.length - 1 && s.rowDivider]}>
             <View style={s.avatarWrap}>
-              <View style={[s.itemThumb, { backgroundColor: demoHue(c.listing.id) }]} />
+              <View style={[s.itemThumb, { backgroundColor: demoHue(c.listing.id) }]}>
+                {c.listing.coverPhoto ? (
+                  <Image
+                    source={{ uri: photoUri(c.listing.coverPhoto.thumbUrl ?? c.listing.coverPhoto.url) }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                ) : null}
+              </View>
               <LinearGradient
                 colors={[theme.blueSoft, theme.orangeSoft]}
                 start={{ x: 0, y: 0 }}

@@ -90,7 +90,12 @@ function relativeTime(iso: string | null | undefined): string {
 type ApiConversation = {
   id: string;
   peer: { id: string; displayName: string; avatarUrl: string | null; avatarInitial: string | null; isOnline: boolean };
-  listing: { id: string; title: Bilingual; priceAed: number };
+  listing: {
+    id: string;
+    title: Bilingual;
+    priceAed: number;
+    coverPhoto: { url: string; thumbUrl: string | null } | null;
+  };
   lastMessage: { text: Bilingual; createdAt: string; fromMe: boolean; kind: string } | null;
   unread: boolean;
   hasOffer: boolean;
@@ -114,7 +119,12 @@ function toConversation(c: ApiConversation): Conversation {
   return {
     id: c.id,
     peer: c.peer,
-    listing: { id: c.listing.id, title: flatten(c.listing.title), priceAed: c.listing.priceAed },
+    listing: {
+      id: c.listing.id,
+      title: flatten(c.listing.title),
+      priceAed: c.listing.priceAed,
+      coverPhoto: c.listing.coverPhoto,
+    },
     lastMessage: {
       text,
       createdAt: last?.createdAt ?? '',
@@ -130,7 +140,12 @@ function toConversation(c: ApiConversation): Conversation {
 type ApiOffer = {
   id: string;
   buyer: { id: string; displayName: string; avatarInitial: string | null };
-  listing: { id: string; title: Bilingual; priceAed: number };
+  listing: {
+    id: string;
+    title: Bilingual;
+    priceAed: number;
+    coverPhoto: { url: string; thumbUrl: string | null } | null;
+  };
   offerAed: number;
   state: string;
   createdAt: string;
@@ -148,7 +163,12 @@ function toOffer(o: ApiOffer): Offer {
   return {
     id: o.id,
     buyer: o.buyer,
-    listing: { id: o.listing.id, title: flatten(o.listing.title), priceAed: o.listing.priceAed },
+    listing: {
+      id: o.listing.id,
+      title: flatten(o.listing.title),
+      priceAed: o.listing.priceAed,
+      coverPhoto: o.listing.coverPhoto,
+    },
     offerAed: o.offerAed,
     state: state as OfferState,
     createdAt: o.createdAt,
@@ -182,6 +202,7 @@ function buildListingsPath(f: ListingFilters): string {
   const params = new URLSearchParams();
   if (f.categoryId) params.set('categoryId', f.categoryId);
   if (f.sellerId) params.set('sellerId', f.sellerId);
+  if (f.neighborhoodId) params.set('neighborhoodId', f.neighborhoodId);
   if (f.q) params.set('q', f.q);
   if (f.limit !== undefined) params.set('limit', String(f.limit));
   if (f.offset !== undefined) params.set('offset', String(f.offset));
@@ -223,6 +244,27 @@ export function useMe() {
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
+}
+
+export function useUpdateHomeNeighborhood() {
+  const qc = useQueryClient();
+  const { currentUser, updateMe } = useAuthStub();
+
+  return (neighborhood: { id: string; slug: string; name: { en: string; ar: string } }) => {
+    if (!currentUser) return;
+
+    updateMe({ homeNeighborhood: neighborhood });
+
+    apiPatch<Me>(`/api/me?userId=${currentUser.id}`, {
+      homeNeighborhoodId: neighborhood.id,
+    })
+      .then((me) => {
+        qc.setQueryData(['me', currentUser.id], me);
+      })
+      .finally(() => {
+        qc.invalidateQueries({ queryKey: ['listings'] });
+      });
+  };
 }
 
 export function useMyListings(status?: 'active' | 'paused' | 'sold') {

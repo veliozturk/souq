@@ -79,10 +79,13 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const badges = useTabBadges();
   const activeRoute = state.routes[state.index];
   const nestedRouteName = getFocusedRouteNameFromRoute(activeRoute);
-  if (activeRoute.name === 'InboxTab' && nestedRouteName === 'Chat') {
+  if (activeRoute.name === 'InboxTab' && (nestedRouteName === 'Chat' || nestedRouteName === 'ItemDetail')) {
     return null;
   }
-  if (activeRoute.name === 'HomeTab' && nestedRouteName === 'ItemDetail') {
+  if (
+    activeRoute.name === 'HomeTab' &&
+    (nestedRouteName === 'ItemDetail' || nestedRouteName === 'LocationPicker')
+  ) {
     return null;
   }
   if (

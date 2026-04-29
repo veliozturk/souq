@@ -214,31 +214,33 @@ export default function ItemDetail({ navigation, route }: Props) {
         </View>
       </ScrollView>
 
-      <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <Pressable
-          onPress={() =>
-            navigation.navigate('SendMessage', {
-              itemId: listing.id,
-              sellerId: listing.seller.id,
-            })
-          }
-          style={s.messageBtn}>
-          <MessageBubbleIcon size={16} color={theme.blue} />
-          <Text style={s.messageBtnText}>Message</Text>
-        </Pressable>
-        {listing.acceptOffers ? (
+      {!route.params.fromConversation ? (
+        <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <Pressable
             onPress={() =>
-              navigation.navigate('MakeOffer', {
+              navigation.navigate('SendMessage', {
                 itemId: listing.id,
                 sellerId: listing.seller.id,
               })
             }
-            style={s.offerBtn}>
-            <Text style={s.offerBtnText}>Make offer</Text>
+            style={s.messageBtn}>
+            <MessageBubbleIcon size={16} color={theme.blue} />
+            <Text style={s.messageBtnText}>Message</Text>
           </Pressable>
-        ) : null}
-      </View>
+          {listing.acceptOffers ? (
+            <Pressable
+              onPress={() =>
+                navigation.navigate('MakeOffer', {
+                  itemId: listing.id,
+                  sellerId: listing.seller.id,
+                })
+              }
+              style={s.offerBtn}>
+              <Text style={s.offerBtnText}>Make offer</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       <PhotoViewer
         visible={viewerOpen}

@@ -12,7 +12,14 @@ public sealed class StorageJanitor(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Delay(FirstRunDelay, stoppingToken);
+        try
+        {
+            await Task.Delay(FirstRunDelay, stoppingToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
         while (!stoppingToken.IsCancellationRequested)
         {
             try

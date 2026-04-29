@@ -1,15 +1,32 @@
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { theme, FONT } from '../../theme';
 import { ChevronLeftIcon } from '../../components/icons';
-import type { BrowseStackParamList } from '../../navigation/types';
+import type { BrowseStackParamList, MainTabsParamList } from '../../navigation/types';
 import { NOTIFICATIONS } from '../../data/fixtures/notifications';
+import type { Notification } from '../../api/types';
 
 type Props = NativeStackScreenProps<BrowseStackParamList, 'Notifications'>;
 
+type InboxTarget = { tab: 'InboxTab'; screen: 'InboxList' | 'Offers' };
+
+function inboxTargetFor(kind: Notification['kind']): InboxTarget | null {
+  if (kind === 'message') return { tab: 'InboxTab', screen: 'InboxList' };
+  if (kind === 'offer') return { tab: 'InboxTab', screen: 'Offers' };
+  return null;
+}
+
 export default function Notifications({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+
+  const handlePress = (n: Notification) => {
+    const target = inboxTargetFor(n.kind);
+    if (!target) return;
+    const parent = navigation.getParent<BottomTabNavigationProp<MainTabsParamList>>();
+    parent?.navigate(target.tab, { screen: target.screen });
+  };
 
   return (
     <View style={s.root}>
@@ -24,20 +41,42 @@ export default function Notifications({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
-        {NOTIFICATIONS.map((n) => (
-          <View key={n.id} style={s.row}>
-            <View style={[s.dot, { backgroundColor: n.read ? theme.line : theme.orange }]} />
-            <View style={s.body}>
-              <Text style={[s.rowTitle, !n.read && s.rowTitleUnread]} numberOfLines={1}>
-                {n.title}
-              </Text>
-              <Text style={s.rowBody} numberOfLines={2}>
-                {n.body}
-              </Text>
+        {NOTIFICATIONS.map((n) => {
+          const linkable = inboxTargetFor(n.kind) !== null;
+          const inner = (
+            <>
+              <View style={[s.dot, { backgroundColor: n.read ? theme.line : theme.orange }]} />
+              <View style={s.body}>
+                <Text style={[s.rowTitle, !n.read && s.rowTitleUnread]} numberOfLines={1}>
+                  {n.title}
+                </Text>
+                <Text style={s.rowBody} numberOfLines={2}>
+                  {n.body}
+                </Text>
+              </View>
+              <Text style={s.time}>{n.relativeTime}</Text>
+            </>
+          );
+
+          if (linkable) {
+            return (
+              <Pressable
+                key={n.id}
+                accessibilityRole="button"
+                onPress={() => handlePress(n)}
+                style={({ pressed }) => [s.row, pressed && { opacity: 0.6 }]}
+              >
+                {inner}
+              </Pressable>
+            );
+          }
+
+          return (
+            <View key={n.id} style={s.row}>
+              {inner}
             </View>
-            <Text style={s.time}>{n.relativeTime}</Text>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );

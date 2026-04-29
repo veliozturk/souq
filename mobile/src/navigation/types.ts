@@ -14,7 +14,7 @@ export type AuthStackParamList = {
 export type BrowseStackParamList = {
   BrowseHome: undefined;
   CategoryResults: { query?: string; categoryId?: string; label?: string };
-  ItemDetail: { id: string };
+  ItemDetail: { id: string; fromConversation?: boolean };
   SellerProfile: { id: string };
   Notifications: undefined;
   LocationPicker: undefined;
@@ -35,6 +35,7 @@ export type InboxStackParamList = {
   InboxList: undefined;
   Chat: { threadId: string };
   Offers: undefined;
+  ItemDetail: { id: string; fromConversation?: boolean };
 };
 
 // Me / account stack

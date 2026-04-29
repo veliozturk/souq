@@ -85,7 +85,14 @@ export default function Chat({ navigation, route }: Props) {
       </View>
 
       {conversation ? (
-        <View style={s.itemContext}>
+        <Pressable
+          onPress={() =>
+            navigation.navigate('ItemDetail', {
+              id: conversation.listing.id,
+              fromConversation: true,
+            })
+          }
+          style={s.itemContext}>
           <View style={[s.itemThumb, { backgroundColor: itemHue }]}>
             {coverThumb ? (
               <Image source={{ uri: photoUri(coverThumb) }} style={StyleSheet.absoluteFill} />
@@ -96,7 +103,7 @@ export default function Chat({ navigation, route }: Props) {
             <Text style={s.itemPrice}>AED {itemPriceAed?.toLocaleString()}</Text>
           </View>
           <Text style={s.viewLink}>View</Text>
-        </View>
+        </Pressable>
       ) : null}
 
       <KeyboardAvoidingView

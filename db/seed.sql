@@ -79,6 +79,45 @@ BEGIN
     INSERT INTO loc_neighborhoods (slug, name, center_lat, center_lng, sort_order)
     VALUES ('jumeirah',     '{"en":"Jumeirah","ar":"جميرا"}'::jsonb,                  25.231, 55.262, 6) RETURNING id INTO n_jum;
 
+    -- additional neighborhoods (sort_order > 6 places them below the popular six)
+    INSERT INTO loc_neighborhoods (slug, name, center_lat, center_lng, sort_order) VALUES
+      ('palm-jumeirah',      '{"en":"Palm Jumeirah","ar":"نخلة جميرا"}'::jsonb,                       25.118, 55.138,  7),
+      ('dubai-media-city',   '{"en":"Dubai Media City","ar":"مدينة دبي للإعلام"}'::jsonb,             25.094, 55.156,  8),
+      ('internet-city',      '{"en":"Internet City","ar":"مدينة الإنترنت"}'::jsonb,                   25.099, 55.166,  9),
+      ('barsha-heights',     '{"en":"Barsha Heights (Tecom)","ar":"برشاء هايتس"}'::jsonb,             25.094, 55.179, 10),
+      ('difc',               '{"en":"DIFC","ar":"مركز دبي المالي العالمي"}'::jsonb,                   25.214, 55.279, 11),
+      ('sheikh-zayed-road',  '{"en":"Sheikh Zayed Road","ar":"شارع الشيخ زايد"}'::jsonb,              25.220, 55.280, 12),
+      ('city-walk',          '{"en":"City Walk","ar":"سيتي ووك"}'::jsonb,                             25.205, 55.265, 13),
+      ('umm-suqeim',         '{"en":"Umm Suqeim","ar":"أم سقيم"}'::jsonb,                             25.144, 55.193, 14),
+      ('al-wasl',            '{"en":"Al Wasl","ar":"الوصل"}'::jsonb,                                  25.196, 55.250, 15),
+      ('bur-dubai',          '{"en":"Bur Dubai","ar":"بر دبي"}'::jsonb,                               25.260, 55.300, 16),
+      ('karama',             '{"en":"Karama","ar":"الكرامة"}'::jsonb,                                 25.245, 55.300, 17),
+      ('satwa',              '{"en":"Satwa","ar":"السطوة"}'::jsonb,                                   25.234, 55.281, 18),
+      ('oud-metha',          '{"en":"Oud Metha","ar":"عود ميثاء"}'::jsonb,                            25.243, 55.314, 19),
+      ('al-jaddaf',          '{"en":"Al Jaddaf","ar":"الجداف"}'::jsonb,                               25.220, 55.330, 20),
+      ('deira',              '{"en":"Deira","ar":"ديرة"}'::jsonb,                                     25.273, 55.320, 21),
+      ('al-rigga',           '{"en":"Al Rigga","ar":"الرقة"}'::jsonb,                                 25.265, 55.325, 22),
+      ('al-mamzar',          '{"en":"Al Mamzar","ar":"الممزر"}'::jsonb,                               25.300, 55.348, 23),
+      ('al-qusais',          '{"en":"Al Qusais","ar":"القصيص"}'::jsonb,                               25.290, 55.380, 24),
+      ('al-nahda',           '{"en":"Al Nahda","ar":"النهدة"}'::jsonb,                                25.290, 55.370, 25),
+      ('dubai-hills-estate', '{"en":"Dubai Hills Estate","ar":"دبي هيلز"}'::jsonb,                    25.105, 55.250, 26),
+      ('mbr-city',           '{"en":"MBR City","ar":"مدينة محمد بن راشد"}'::jsonb,                    25.165, 55.310, 27),
+      ('meydan',             '{"en":"Meydan","ar":"ميدان"}'::jsonb,                                   25.157, 55.298, 28),
+      ('al-quoz',            '{"en":"Al Quoz","ar":"القوز"}'::jsonb,                                  25.155, 55.232, 29),
+      ('jvc',                '{"en":"JVC","ar":"الضاحية الدائرية بجميرا"}'::jsonb,                    25.060, 55.213, 30),
+      ('jvt',                '{"en":"JVT","ar":"ضاحية المثلث بجميرا"}'::jsonb,                        25.052, 55.198, 31),
+      ('al-furjan',          '{"en":"Al Furjan","ar":"الفرجان"}'::jsonb,                              25.030, 55.140, 32),
+      ('discovery-gardens',  '{"en":"Discovery Gardens","ar":"ديسكفري جاردنز"}'::jsonb,               25.046, 55.140, 33),
+      ('motor-city',         '{"en":"Motor City","ar":"موتور سيتي"}'::jsonb,                          25.046, 55.243, 34),
+      ('mirdif',             '{"en":"Mirdif","ar":"مردف"}'::jsonb,                                    25.215, 55.420, 35),
+      ('al-warqa',           '{"en":"Al Warqa","ar":"الورقاء"}'::jsonb,                               25.197, 55.405, 36),
+      ('international-city', '{"en":"International City","ar":"المدينة العالمية"}'::jsonb,            25.166, 55.408, 37),
+      ('festival-city',      '{"en":"Dubai Festival City","ar":"دبي فيستيفال سيتي"}'::jsonb,          25.218, 55.353, 38),
+      ('creek-harbour',      '{"en":"Dubai Creek Harbour","ar":"ميناء خور دبي"}'::jsonb,              25.198, 55.347, 39),
+      ('dubai-south',        '{"en":"Dubai South","ar":"دبي الجنوب"}'::jsonb,                         24.892, 55.165, 40),
+      ('expo-city',          '{"en":"Expo City","ar":"إكسبو سيتي"}'::jsonb,                           24.957, 55.150, 41),
+      ('dip',                '{"en":"Dubai Investment Park","ar":"مجمع دبي للاستثمار"}'::jsonb,       24.985, 55.215, 42);
+
     -- ───────── users ─────────
     INSERT INTO usr_users (auth0_sub, phone, name, handle, avatar_initial, is_verified, is_new_seller, joined_year, home_neighborhood_id)
     VALUES ('seed|aisha', '971501234567', 'Aisha Al Mansouri', 'aisha_m',  'A', 1, 0, 2024, n_marina) RETURNING id INTO u_aisha;
