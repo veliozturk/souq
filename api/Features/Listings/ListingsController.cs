@@ -1,5 +1,9 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using NpgsqlTypes;
+using Souq.Api.Features.Auth;
 using Souq.Api.Persistence;
 
 namespace Souq.Api.Features.Listings;
@@ -16,7 +20,8 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
         [FromQuery] string? q,
         [FromQuery] string? status,
         [FromQuery] int? limit,
-        [FromQuery] int? offset)
+        [FromQuery] int? offset,
+        [FromServices] IUserContext userCtx = null!)
     {
         if (status is not null && status is not ("active" or "paused" or "sold"))
             return BadRequest(new { error = "status must be active, paused, or sold" });
@@ -42,11 +47,14 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
                 EF.Functions.ILike(l.Title.Original, pattern));
         }
 
+        var includeSellerStats = sellerId.HasValue
+            && userCtx?.CurrentUserId == sellerId.Value;
+
         var rows = await query
             .OrderByDescending(l => l.PublishedAt)
             .Skip(skip)
             .Take(take)
-            .SelectListingCard(db, now)
+            .SelectListingCard(db, now, includeSellerStats)
             .ToListAsync();
 
         return Ok(rows);
@@ -127,8 +135,88 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
         return Ok(listing);
     }
 
+    [HttpPost("{id:guid}/view")]
+    public async Task<IActionResult> RecordView(Guid id, [FromServices] IUserContext userCtx)
+    {
+        const string sql = """
+            WITH self_check AS (
+                SELECT seller_id FROM souq.lst_listings
+                WHERE id = @lid AND deleted_at IS NULL
+            )
+            INSERT INTO souq.lst_listing_daily_metrics (listing_id, metric_date, view_count)
+            SELECT @lid, (now() AT TIME ZONE 'UTC')::date, 1
+            FROM self_check
+            WHERE seller_id IS DISTINCT FROM @vid
+            ON CONFLICT (listing_id, metric_date)
+            DO UPDATE SET view_count = souq.lst_listing_daily_metrics.view_count + 1;
+            """;
+        var lidParam = new NpgsqlParameter("lid", NpgsqlDbType.Uuid) { Value = id };
+        var vidParam = new NpgsqlParameter("vid", NpgsqlDbType.Uuid)
+        {
+            Value = (object?)userCtx.CurrentUserId ?? DBNull.Value,
+        };
+        await db.Database.ExecuteSqlRawAsync(sql, lidParam, vidParam);
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}/stats")]
-    public IActionResult Stats(Guid id) => new StatusCodeResult(StatusCodes.Status200OK);
+    public async Task<IActionResult> Stats(Guid id, [FromServices] IUserContext userCtx)
+    {
+        if (userCtx.CurrentUserId is null) return NotFound();
+
+        var listing = await db.Listings.AsNoTracking()
+            .Where(l => l.Id == id && l.DeletedAt == null)
+            .Select(l => new { l.SellerId })
+            .FirstOrDefaultAsync();
+        if (listing is null) return NotFound();
+
+        var caller = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userCtx.CurrentUserId.Value)
+            .Select(u => new { u.IsAdmin, u.IsSuperAdmin })
+            .FirstOrDefaultAsync();
+
+        var isOwner = listing.SellerId == userCtx.CurrentUserId.Value;
+        var isAdmin = caller is not null && (caller.IsAdmin == 1 || caller.IsSuperAdmin == 1);
+        if (!isOwner && !isAdmin) return NotFound();
+
+        var totalViews = await db.ListingDailyMetrics.AsNoTracking()
+            .Where(m => m.ListingId == id)
+            .SumAsync(m => (int?)m.ViewCount) ?? 0;
+
+        var todayUtc = DateOnly.FromDateTime(DateTime.UtcNow);
+        var windowStart = todayUtc.AddDays(-6);
+
+        var rows = await db.ListingDailyMetrics.AsNoTracking()
+            .Where(m => m.ListingId == id && m.MetricDate >= windowStart)
+            .Select(m => new { m.MetricDate, m.ViewCount })
+            .ToListAsync();
+        var rowMap = rows.ToDictionary(r => r.MetricDate, r => r.ViewCount);
+
+        var views7d = Enumerable.Range(0, 7)
+            .Select(i => windowStart.AddDays(i))
+            .Select(d => new
+            {
+                dayLabel = d.ToString("ddd", CultureInfo.InvariantCulture),
+                count = rowMap.GetValueOrDefault(d, 0),
+                isToday = d == todayUtc,
+            })
+            .ToList();
+
+        return Ok(new
+        {
+            listingId = id,
+            totals = new
+            {
+                views = totalViews,
+                viewsTodayDelta = rowMap.GetValueOrDefault(todayUtc, 0),
+                saves = 0,
+                savesRatePct = 0,
+                messages = 0,
+                unreadMessages = 0,
+            },
+            views7d,
+        });
+    }
 
     [HttpGet("drafts")]
     public IActionResult Drafts() => Ok(Array.Empty<object>());

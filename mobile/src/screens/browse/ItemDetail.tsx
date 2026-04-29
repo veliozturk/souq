@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -25,7 +25,7 @@ import {
   VerifiedIcon,
   MessageBubbleIcon,
 } from '../../components/icons';
-import { useFavoriteToggle, useListing } from '../../api/queries';
+import { useFavoriteToggle, useListing, useRecordView } from '../../api/queries';
 import { photoUri } from '../../api/photoUri';
 import { demoHue } from '../../utils/demoHue';
 import type { ListingSummary } from '../../api/types';
@@ -44,6 +44,18 @@ export default function ItemDetail({ navigation, route }: Props) {
   const listingQ = useListing(route.params.id);
   const { isFavorite, toggle } = useFavoriteToggle();
   const listing = listingQ.data;
+
+  const recordView = useRecordView();
+  const lastRecordedRef = useRef<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!listing) return;
+    const id = listing.id;
+    const last = lastRecordedRef.current;
+    const now = Date.now();
+    if (last && last.id === id && now - last.at < 1000) return;
+    lastRecordedRef.current = { id, at: now };
+    recordView(id);
+  }, [listing, recordView]);
 
   if (listingQ.isPending) {
     return (

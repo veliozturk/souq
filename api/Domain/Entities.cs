@@ -122,6 +122,21 @@ public sealed class BstBoost
     public DateTime EndsAt { get; set; }
 }
 
+public sealed class LstListingDailyMetric
+{
+    public Guid Id { get; set; }
+    public Guid ListingId { get; set; }
+    public DateOnly MetricDate { get; set; }
+    public int ViewCount { get; set; }
+    public int SaveCount { get; set; }
+    public int MessageCount { get; set; }
+    public int OfferCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? UpdatedBy { get; set; }
+}
+
 public sealed class MsgConversation
 {
     public Guid Id { get; set; }

@@ -12,6 +12,7 @@ public sealed class SouqDbContext(DbContextOptions<SouqDbContext> options) : DbC
     public DbSet<LstListing> Listings => Set<LstListing>();
     public DbSet<LstListingPhoto> ListingPhotos => Set<LstListingPhoto>();
     public DbSet<BstBoost> Boosts => Set<BstBoost>();
+    public DbSet<LstListingDailyMetric> ListingDailyMetrics => Set<LstListingDailyMetric>();
     public DbSet<MsgConversation> Conversations => Set<MsgConversation>();
     public DbSet<MsgMessage> Messages => Set<MsgMessage>();
     public DbSet<OfrOffer> Offers => Set<OfrOffer>();
@@ -156,6 +157,24 @@ public sealed class SouqDbContext(DbContextOptions<SouqDbContext> options) : DbC
             e.Property(x => x.ListingId).HasColumnName("listing_id");
             e.Property(x => x.StartsAt).HasColumnName("starts_at");
             e.Property(x => x.EndsAt).HasColumnName("ends_at");
+        });
+
+        b.Entity<LstListingDailyMetric>(e =>
+        {
+            e.ToTable("lst_listing_daily_metrics");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            e.Property(x => x.ListingId).HasColumnName("listing_id");
+            e.Property(x => x.MetricDate).HasColumnName("metric_date");
+            e.Property(x => x.ViewCount).HasColumnName("view_count");
+            e.Property(x => x.SaveCount).HasColumnName("save_count");
+            e.Property(x => x.MessageCount).HasColumnName("message_count");
+            e.Property(x => x.OfferCount).HasColumnName("offer_count");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.CreatedBy).HasColumnName("created_by");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            e.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+            e.HasIndex(x => new { x.ListingId, x.MetricDate }).IsUnique();
         });
 
         b.Entity<MsgConversation>(e =>

@@ -8,7 +8,7 @@ Bilingual (EN/AR, RTL) C2C second-hand marketplace for Dubai. Mobile-first.
 |---|---|
 | **Database** | PostgreSQL 18 schema in [db/schema.sql](db/schema.sql) — 20 tables in the `souq` schema. Design rationale in [db-design.md](db-design.md), per-field semantics in [db-design-fields.md](db-design-fields.md). |
 | **Backend** | ASP.NET Core 10 scaffold in [api/](api/). `/healthz` + DB ping working. No entities, no auth, no real endpoints yet. |
-| **Mobile app** | Expo / React Native + TypeScript in [mobile/](mobile/). **This is the primary consumer surface — when the user says "the app", "frontend", or "UI" without qualifying, they mean this.** |
+| **Mobile app** | Expo / React Native + TypeScript in [mobile/](mobile/) — bottom tabs (Home, Saved, Sell, Inbox, Me) with full browse/list/chat/offer flows wired against the backend via TanStack Query. **This is the primary consumer surface — when the user says "the app", "frontend", or "UI" without qualifying, they mean this.** |
 | **Web prototype** | React 18 + Vite in [src/](src/) with hardcoded data — older prototype kept around but not the active consumer target. Only touch when explicitly asked about "web" or "src". |
 | **Admin panel** | Vite + React + TypeScript in [admin/](admin/). |
 | **Deployment** | Not deployed. Target: DigitalOcean BLR1. |
@@ -25,6 +25,23 @@ souq1/
 ├── db-design.md          Schema design rationale + v2 deferrals (reviews, payments)
 └── db-design-fields.md   Per-field semantics (bilingual JSONB shape, soft-delete rules)
 ```
+
+## Mobile app structure
+
+What's built in [mobile/src/](mobile/src/):
+
+- **Navigation** ([navigation/](mobile/src/navigation/)): `RootNavigator` → `AuthStack` (stub) | `MainTabs`. `MainTabs` = `BrowseStack` / Saved / `ListingStack` / `InboxStack` / `MeStack`. Custom tab bar in [MainTabs.tsx](mobile/src/navigation/MainTabs.tsx) hides itself on detail/chat/sell/edit screens.
+- **Screens** ([screens/](mobile/src/screens/)):
+  - `browse/`: Home, ItemDetail, SellerProfile, CategoryResults, LocationPicker, Notifications
+  - `listing/`: Start → Category → Photos → Details → Price → Preview (sell flow, draft state in `ListingDraftContext`)
+  - `inbox/`: Inbox, Chat, Offers
+  - `me/`: Profile, MyListings, ListingAdmin, EditListing, EditPhotos
+  - `auth/`: Welcome, Phone, OTP, Profile, Location, Success (UX shell only — see auth note below)
+- **Modals** ([modals/](mobile/src/modals/)): SendMessage, MakeOffer, CounterOffer.
+- **Components** ([components/](mobile/src/components/)): PrimaryBtn, SecondaryBtn, BackBtn, Bubble, Chip, FieldLabel, MinimalHeader, PhotoViewer, Placeholder, Progress, Stat, Toggle, CompassIllo, icons.
+- **API layer** ([api/](mobile/src/api/)): [client.ts](mobile/src/api/client.ts) is a fetch wrapper hitting `EXPO_PUBLIC_API_URL` (default `http://localhost:5127`) with a `Session <id>` auth header; [queries.ts](mobile/src/api/queries.ts) holds all TanStack Query hooks.
+- **Auth** ([auth/](mobile/src/auth/)): `AuthStub` + `sessionRef`/`sessionStorage` — phone/OTP screens exist as UI but auth is a session-id stub against the backend, NOT Auth0 yet (consistent with [auth-sequencing memory](~/.claude/projects/-Users-veliozturk-projects-souq1/memory/project_auth_sequencing.md): admin ships first, consumer auth later).
+- **Theme** ([theme.ts](mobile/src/theme.ts)): two palettes (`souqTheme`, `sandTheme`) — `sandTheme` is active; flip the `export const theme =` line to preview. `FONT` exposes Plus Jakarta Sans weights loaded by `expo-font`. All ~42 callers consume `theme.X` tokens, so don't hardcode colors.
 
 ## Common commands
 

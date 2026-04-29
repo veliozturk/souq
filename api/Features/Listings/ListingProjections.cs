@@ -6,7 +6,7 @@ namespace Souq.Api.Features.Listings;
 public static class ListingProjections
 {
     public static IQueryable<ListingCardDto> SelectListingCard(
-        this IQueryable<LstListing> q, SouqDbContext db, DateTime now)
+        this IQueryable<LstListing> q, SouqDbContext db, DateTime now, bool includeSellerStats = false)
         => q.Select(l => new ListingCardDto
         {
             Id = l.Id,
@@ -41,5 +41,15 @@ public static class ListingProjections
                 .FirstOrDefault(),
             IsBoosted = db.Boosts.Any(b =>
                 b.ListingId == l.Id && b.StartsAt <= now && b.EndsAt >= now),
+            SellerStats = includeSellerStats
+                ? new ListingCardSellerStatsDto
+                {
+                    ViewsCount = db.ListingDailyMetrics
+                        .Where(m => m.ListingId == l.Id)
+                        .Sum(m => (int?)m.ViewCount) ?? 0,
+                    MessagesCount = 0,
+                    PendingOffersCount = 0,
+                }
+                : null,
         });
 }

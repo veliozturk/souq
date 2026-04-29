@@ -277,6 +277,20 @@ export function CameraSlotIcon({ size = 22, color = '#fff' }: { size?: number; c
   );
 }
 
+export function RefreshIcon({ size = 14, color = theme.inkDim }: { size?: number; color?: Color }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <Path
+        d="M2 2v3.5h3.5M14 14v-3.5h-3.5M2.5 6.5A6 6 0 0113 5M13.5 9.5A6 6 0 013 11"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function MicStandIcon({ size = 14, color = '#fff' }: { size?: number; color?: Color }) {
   return (
     <Svg width={size} height={(size * 18) / 14} viewBox="0 0 14 18" fill="none">

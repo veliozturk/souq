@@ -25,6 +25,9 @@ export type ListingStackParamList = {
   ListingStart: undefined;
   ListingPhotos: undefined;
   ListingDetails: undefined;
+  ListingVoiceListening: undefined;
+  ListingVoiceTranscript: undefined;
+  ListingVoiceSuggestions: undefined;
   ListingCategory: undefined;
   ListingPrice: undefined;
   ListingPreview: undefined;

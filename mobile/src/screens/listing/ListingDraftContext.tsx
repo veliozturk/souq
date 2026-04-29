@@ -3,6 +3,12 @@ import type { ListingDraftBody } from '../../api/types';
 
 export type ListingDraft = ListingDraftBody;
 
+export type VoiceCapture = {
+  transcript: string;
+  durationSec: number;
+  audioUri?: string;
+};
+
 const EMPTY: ListingDraft = {
   photos: [],
   title: '',
@@ -14,6 +20,8 @@ const EMPTY: ListingDraft = {
   acceptOffers: true,
 };
 
+const EMPTY_VOICE: VoiceCapture = { transcript: '', durationSec: 0 };
+
 function initialDraft(): ListingDraft {
   return { ...EMPTY };
 }
@@ -23,12 +31,15 @@ type Ctx = {
   patch: (p: Partial<ListingDraft>) => void;
   load: (body: ListingDraft) => void;
   reset: () => void;
+  voice: VoiceCapture;
+  setVoice: (v: VoiceCapture) => void;
 };
 
 const ListingDraftCtx = createContext<Ctx | null>(null);
 
 export function ListingDraftProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<ListingDraft>(initialDraft);
+  const [voice, setVoiceState] = useState<VoiceCapture>(EMPTY_VOICE);
   const patch = useCallback((p: Partial<ListingDraft>) => {
     setDraft((d) => ({ ...d, ...p }));
   }, []);
@@ -37,9 +48,11 @@ export function ListingDraftProvider({ children }: { children: ReactNode }) {
   }, []);
   const reset = useCallback(() => {
     setDraft(initialDraft());
+    setVoiceState(EMPTY_VOICE);
   }, []);
+  const setVoice = useCallback((v: VoiceCapture) => setVoiceState(v), []);
   return (
-    <ListingDraftCtx.Provider value={{ draft, patch, load, reset }}>
+    <ListingDraftCtx.Provider value={{ draft, patch, load, reset, voice, setVoice }}>
       {children}
     </ListingDraftCtx.Provider>
   );

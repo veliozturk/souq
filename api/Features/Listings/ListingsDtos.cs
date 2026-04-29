@@ -14,6 +14,14 @@ public sealed record ListingCardDto
     public SellerSummaryDto Seller { get; init; } = null!;
     public CoverPhotoDto? CoverPhoto { get; init; }
     public bool IsBoosted { get; init; }
+    public ListingCardSellerStatsDto? SellerStats { get; init; }
+}
+
+public sealed record ListingCardSellerStatsDto
+{
+    public int ViewsCount { get; init; }
+    public int MessagesCount { get; init; }
+    public int PendingOffersCount { get; init; }
 }
 
 public sealed record NeighborhoodSummaryDto

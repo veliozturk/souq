@@ -288,6 +288,12 @@ export function useListingStats(id: string | undefined) {
   });
 }
 
+export function useRecordView() {
+  return useCallback((listingId: string) => {
+    apiPost(`/api/listings/${listingId}/view`, { source: 'detail' }).catch(() => {});
+  }, []);
+}
+
 export function useDrafts() {
   return useQuery({
     queryKey: ['drafts'],

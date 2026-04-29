@@ -32,7 +32,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Souq records your voice to fill in your listing."
+        }
+      ]
     ],
     "extra": {
       "eas": {
