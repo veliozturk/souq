@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../theme';
-import { SparkleIcon, MicIcon, SendIcon, ShieldIcon } from '../components/icons';
+import { SparkleIcon, MicIcon, SendIcon, ShieldIcon, CloseIcon } from '../components/icons';
 import { useListing, useQuickReplies, useStartConversation } from '../api/queries';
 import { demoHue } from '../utils/demoHue';
 import type { RootStackParamList } from '../navigation/types';
@@ -60,8 +60,8 @@ export default function SendMessage({ navigation, route }: Props) {
       <Pressable style={s.dim} onPress={dismiss} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <Pressable onPress={dismiss} style={s.handleHit}>
-            <View style={s.handle} />
+          <Pressable onPress={dismiss} style={s.closeBtn} hitSlop={8}>
+            <CloseIcon size={14} color={theme.ink} />
           </Pressable>
 
           <ScrollView
@@ -71,18 +71,6 @@ export default function SendMessage({ navigation, route }: Props) {
             showsVerticalScrollIndicator={false}>
             <Text style={s.title}>{sellerFirstName ? `Message ${sellerFirstName}` : 'Message'}</Text>
             <Text style={s.subtitle}>Replies in ~2h · English, Arabic</Text>
-
-            {listing ? (
-              <View style={s.itemCard}>
-                <View style={[s.itemThumb, { backgroundColor: demoHue(listing.id) }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.itemTitle}>{itemTitle}</Text>
-                  {itemPrice != null ? (
-                    <Text style={s.itemPrice}>AED {itemPrice.toLocaleString()}</Text>
-                  ) : null}
-                </View>
-              </View>
-            ) : null}
 
             <Text style={s.section}>QUICK MESSAGES</Text>
             <View style={s.quickRow}>
@@ -125,13 +113,13 @@ export default function SendMessage({ navigation, route }: Props) {
               </View>
             </View>
 
-            <View style={s.notice}>
+            {/* <View style={s.notice}>
               <ShieldIcon size={14} color={theme.blue} />
               <Text style={s.noticeText}>
                 <Text style={s.noticeBold}>Keep it on Souq.</Text> Don't share phone, bank details or WhatsApp until
                 you're ready to meet.
               </Text>
-            </View>
+            </View> */}
 
             <View style={s.buttonsRow}>
               <Pressable onPress={dismiss} style={s.saveBtn}>
@@ -167,7 +155,7 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
-    maxHeight: '92%',
+    maxHeight: '100%',
   },
   handleHit: {
     paddingVertical: 8,
@@ -181,6 +169,20 @@ const s = StyleSheet.create({
   },
   scroll: {
     flexGrow: 0,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   scrollContent: {
     paddingHorizontal: 20,

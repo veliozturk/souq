@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme, FONT } from '../theme';
 import { PrimaryBtn } from '../components/PrimaryBtn';
-import { ShieldIcon } from '../components/icons';
+import { ShieldIcon, CloseIcon } from '../components/icons';
 import { useListing, useMakeOffer } from '../api/queries';
 import { demoHue } from '../utils/demoHue';
 import type { RootStackParamList } from '../navigation/types';
@@ -67,8 +67,8 @@ export default function MakeOffer({ navigation, route }: Props) {
       <Pressable style={s.dim} onPress={dismiss} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <Pressable onPress={dismiss} style={s.handleHit}>
-            <View style={s.handle} />
+          <Pressable onPress={dismiss} style={s.closeBtn} hitSlop={8}>
+            <CloseIcon size={14} color={theme.ink} />
           </Pressable>
           <ScrollView
             contentContainerStyle={s.scrollContent}
@@ -76,16 +76,6 @@ export default function MakeOffer({ navigation, route }: Props) {
             showsVerticalScrollIndicator={false}>
             <Text style={s.title}>Make an offer</Text>
             <Text style={s.subtitle}>Sellers usually reply within a few hours.</Text>
-
-            {listing ? (
-              <View style={s.itemCard}>
-                <View style={[s.itemThumb, { backgroundColor: demoHue(listing.id) }]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.itemTitle}>{listing.title.original}</Text>
-                  <Text style={s.itemPrice}>Listed at AED {listing.priceAed.toLocaleString()}</Text>
-                </View>
-              </View>
-            ) : null}
 
             <View style={s.priceCard}>
               <View style={s.aedBadge}>
@@ -123,13 +113,13 @@ export default function MakeOffer({ navigation, route }: Props) {
               </View>
             ) : null}
 
-            <View style={s.notice}>
+            {/* <View style={s.notice}>
               <ShieldIcon size={14} color={theme.blue} />
               <Text style={s.noticeText}>
                 <Text style={s.noticeBold}>Your offer is binding for 24h.</Text> The seller can accept,
                 decline, or counter.
               </Text>
-            </View>
+            </View> */}
 
             <View style={{ marginTop: 14 }}>
               <PrimaryBtn variant="orange" onPress={submit} disabled={!canSend}>
@@ -158,7 +148,7 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
-    maxHeight: '92%',
+    maxHeight: '100%',
   },
   handleHit: {
     paddingVertical: 8,
@@ -169,6 +159,20 @@ const s = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: theme.line,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   scrollContent: {
     paddingHorizontal: 20,
