@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -7,6 +7,7 @@ import {
   TextInput,
   StyleSheet,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +28,19 @@ export default function SendMessage({ navigation, route }: Props) {
 
   const [message, setMessage] = useState('');
   const [activeReply, setActiveReply] = useState<string | null>(null);
+  const [kbVisible, setKbVisible] = useState(false);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvt, () => setKbVisible(true));
+    const hide = Keyboard.addListener(hideEvt, () => setKbVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const dismiss = () => navigation.goBack();
   const canSend = message.trim().length > 0 && !!listing;
@@ -58,8 +71,8 @@ export default function SendMessage({ navigation, route }: Props) {
   return (
     <View style={s.root}>
       <Pressable style={s.dim} onPress={dismiss} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <KeyboardAvoidingView behavior="padding">
+        <View style={[s.sheet, { paddingBottom: kbVisible ? 16 : Math.max(insets.bottom, 16) }]}>
           <Pressable onPress={dismiss} style={s.closeBtn} hitSlop={8}>
             <CloseIcon size={14} color={theme.ink} />
           </Pressable>

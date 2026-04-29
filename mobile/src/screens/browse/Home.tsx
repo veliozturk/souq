@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,8 +28,13 @@ type Props = CompositeScreenProps<
 export default function BrowseHome({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStub();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const categoriesQ = useCategories();
-  const listingsQ = useListings({ limit: 6, neighborhoodId: currentUser?.homeNeighborhood?.id });
+  const listingsQ = useListings({
+    limit: 6,
+    neighborhoodId: currentUser?.homeNeighborhood?.id,
+    categoryId: selectedCategoryId ?? undefined,
+  });
   const { isFavorite, toggle } = useFavoriteToggle();
   const location = currentUser?.homeNeighborhood?.name.en ?? 'Dubai';
 
@@ -68,22 +74,23 @@ export default function BrowseHome({ navigation }: Props) {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={s.catsRow}>
-          {(categoriesQ.data ?? []).map((c, i) => {
-            const active = i === 0;
+          {(categoriesQ.data ?? []).map((c) => {
+            const active = selectedCategoryId === c.id;
             const hue = demoHue(c.id);
             return (
               <Pressable
                 key={c.id}
-                onPress={() => navigation.navigate('CategoryResults', { categoryId: c.id, label: c.name.en })}
+                onPress={() => setSelectedCategoryId(active ? null : c.id)}
                 style={s.cat}>
-                <View
-                  style={[
-                    s.catTile,
-                    { backgroundColor: hue },
-                    active && { borderColor: theme.orange, borderWidth: 2 },
-                  ]}>
-                  <View style={s.catTileTint} />
-                  <View style={s.catTileInner} />
+                <View style={[s.catTileRing, active && s.catTileRingActive]}>
+                  <View style={[s.catTile, { backgroundColor: hue }]}>
+                    <View style={s.catTileTint} />
+                    <View style={s.catTileInner} />
+                    <View
+                      style={[s.catTileFrame, !active && s.catTileFrameHidden]}
+                      pointerEvents="none"
+                    />
+                  </View>
                 </View>
                 <Text style={[s.catLabel, active && { color: theme.orange }]}>{c.name.en}</Text>
               </Pressable>
@@ -265,6 +272,14 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  catTileRing: {
+    padding: 2,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  catTileRingActive: {
+    backgroundColor: theme.orange,
+  },
   catTile: {
     width: 56,
     height: 56,
@@ -272,6 +287,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  catTileFrame: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    borderWidth: 4,
+    borderColor: '#fff',
+  },
+  catTileFrameHidden: {
+    borderColor: 'transparent',
   },
   catTileTint: {
     ...StyleSheet.absoluteFillObject,

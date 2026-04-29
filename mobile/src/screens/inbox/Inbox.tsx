@@ -19,14 +19,24 @@ export default function Inbox({ navigation }: Props) {
   const [filter, setFilter] = useState('All');
   const [searchText, setSearchText] = useState('');
   const insets = useSafeAreaInsets();
-  const { data: conversations = [], refetch, isRefetching } = useConversations();
+  const { data: conversations = [], refetch } = useConversations();
   const unreadCount = conversations.filter((c) => c.unread).length;
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       refetch();
     }, [refetch]),
   );
+
+  const onPullRefresh = useCallback(async () => {
+    setIsManualRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  }, [refetch]);
 
   const q = searchText.trim().toLowerCase();
   const visibleConversations = conversations.filter((c) => {
@@ -84,7 +94,7 @@ export default function Inbox({ navigation }: Props) {
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.inkDim} />
+          <RefreshControl refreshing={isManualRefreshing} onRefresh={onPullRefresh} tintColor={theme.inkDim} />
         }>
         {visibleConversations.length === 0 ? (
           <Text style={s.emptyText}>No conversations</Text>

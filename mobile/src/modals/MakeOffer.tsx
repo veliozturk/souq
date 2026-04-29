@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,7 +27,19 @@ export default function MakeOffer({ navigation, route }: Props) {
   const makeOffer = useMakeOffer();
 
   const [priceText, setPriceText] = useState('');
+  const [kbVisible, setKbVisible] = useState(false);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvt, () => setKbVisible(true));
+    const hide = Keyboard.addListener(hideEvt, () => setKbVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const dismiss = () => navigation.goBack();
 
@@ -65,8 +78,8 @@ export default function MakeOffer({ navigation, route }: Props) {
   return (
     <View style={s.root}>
       <Pressable style={s.dim} onPress={dismiss} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <KeyboardAvoidingView behavior="padding">
+        <View style={[s.sheet, { paddingBottom: kbVisible ? 16 : Math.max(insets.bottom, 16) }]}>
           <Pressable onPress={dismiss} style={s.closeBtn} hitSlop={8}>
             <CloseIcon size={14} color={theme.ink} />
           </Pressable>

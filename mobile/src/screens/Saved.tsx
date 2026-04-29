@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -14,14 +14,24 @@ type Props = BottomTabScreenProps<MainTabsParamList, 'SavedTab'>;
 
 export default function Saved({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { data: favorites = [], isPending, isError, isRefetching, refetch } = useFavorites();
+  const { data: favorites = [], isPending, isError, refetch } = useFavorites();
   const { toggle } = useFavoriteToggle();
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       refetch();
     }, [refetch]),
   );
+
+  const onPullRefresh = useCallback(async () => {
+    setIsManualRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  }, [refetch]);
 
   const confirmRemove = (it: (typeof favorites)[number]) => {
     Alert.alert(
@@ -60,7 +70,7 @@ export default function Saved({ navigation }: Props) {
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.inkDim} />
+            <RefreshControl refreshing={isManualRefreshing} onRefresh={onPullRefresh} tintColor={theme.inkDim} />
           }>
           <View style={s.grid}>
             {favorites.map((it) => {
