@@ -506,7 +506,7 @@ const s = StyleSheet.create({
     backgroundColor: theme.orange,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: theme.orange,
+    shadowColor: theme.buttonShadow,
     shadowOpacity: 0.32,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },

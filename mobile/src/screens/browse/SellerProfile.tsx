@@ -267,7 +267,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: theme.orange,
+    shadowColor: theme.buttonShadow,
     shadowOpacity: 0.32,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },

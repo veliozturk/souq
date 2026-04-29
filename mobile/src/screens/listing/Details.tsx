@@ -169,7 +169,7 @@ const s = StyleSheet.create({
     backgroundColor: theme.orange,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: theme.orange,
+    shadowColor: theme.buttonShadow,
     shadowOpacity: 0.35,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },

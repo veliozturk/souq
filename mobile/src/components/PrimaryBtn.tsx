@@ -52,7 +52,7 @@ const s = StyleSheet.create({
     elevation: 4,
   },
   shadowOrange: {
-    shadowColor: theme.orange,
+    shadowColor: theme.buttonShadow,
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },

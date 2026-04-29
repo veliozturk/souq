@@ -12,6 +12,7 @@ const souqTheme = {
   bg:         '#FAFAF7',
   surface:    '#FFFFFF',
   success:    '#10B981',
+  buttonShadow: '#F97316'
 } as const;
 
 const sandTheme = {
@@ -25,6 +26,7 @@ const sandTheme = {
   bg:         '#F5EFE4',
   surface:    '#FBF7EE',
   success:    '#10B981',
+  buttonShadow: '#F97316'
 } as const;
 
 export const theme = sandTheme;
