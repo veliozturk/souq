@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { theme, FONT } from '../../theme';
 import {
   ChevronLeftIcon,
@@ -13,10 +13,7 @@ import {
 } from '../../components/icons';
 import { useAuthStub } from '../../auth/AuthStub';
 import { useNeighborhoods, useUpdateHomeNeighborhood } from '../../api/queries';
-import type { BrowseStackParamList } from '../../navigation/types';
 import type { Neighborhood } from '../../api/types';
-
-type Props = NativeStackScreenProps<BrowseStackParamList, 'LocationPicker'>;
 
 const ZONE_BY_SLUG: Record<string, string> = {
   'dubai-marina': 'marina-jbr',
@@ -83,7 +80,8 @@ const OTHER_ZONE: ZoneDef = {
   sortOrder: 99,
 };
 
-export default function LocationPicker({ navigation }: Props) {
+export default function LocationPicker() {
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { currentUser } = useAuthStub();
   const { data: neighborhoods = [] } = useNeighborhoods();
@@ -128,6 +126,13 @@ export default function LocationPicker({ navigation }: Props) {
     updateHomeNeighborhood({ id: h.id, slug: h.slug, name: h.name });
     navigation.goBack();
   };
+
+  const onPickAll = () => {
+    updateHomeNeighborhood(null);
+    navigation.goBack();
+  };
+
+  const allSelected = selectedId === null;
 
   const toggleZone = (key: string) => {
     setExpandedZones((prev) => {
@@ -219,7 +224,27 @@ export default function LocationPicker({ navigation }: Props) {
           </>
         ) : (
           <>
-            <Text style={s.section}>POPULAR IN DUBAI</Text>
+            <Pressable
+              onPress={onPickAll}
+              style={[s.row, allSelected && s.rowSelected]}>
+              <View style={[s.rowIcon, { backgroundColor: allSelected ? theme.orange : theme.blueSoft }]}>
+                <MapPinIcon
+                  size={16}
+                  color={allSelected ? '#fff' : theme.blue}
+                  innerColor={allSelected ? theme.orange : '#fff'}
+                />
+              </View>
+              <View style={s.rowBody}>
+                <Text style={s.rowName}>All of Dubai</Text>
+              </View>
+              {allSelected ? (
+                <View style={s.rowCheck}>
+                  <CheckIcon size={12} color="#fff" />
+                </View>
+              ) : null}
+            </Pressable>
+
+            <Text style={[s.section, s.sectionSpaced]}>POPULAR IN DUBAI</Text>
             {popular.map(renderRow)}
 
             {zoneGroups.length > 0 ? (

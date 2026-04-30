@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { photoUri } from '../../api/photoUri';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,10 +13,10 @@ import {
   WalletIcon,
   HeartIcon,
   ReceiptIcon,
-  BellIcon,
   MapPinSmallIcon,
   ShieldIcon,
   HelpIcon,
+  SparkleIcon,
   ChevronRightIcon,
 } from '../../components/icons';
 import { useAuthStub } from '../../auth/AuthStub';
@@ -103,11 +104,6 @@ export default function MeProfile({ navigation }: Props) {
       header: 'ACCOUNT',
       rows: [
         {
-          label: 'Notifications',
-          icon: <BellIcon size={16} color={theme.blue} />,
-          iconBg: theme.blueSoft,
-        },
-        {
           label: homeNeighborhood ? `Location · ${homeNeighborhood.name.en}` : 'Location',
           icon: <MapPinSmallIcon size={16} color={theme.blue} />,
           iconBg: theme.blueSoft,
@@ -118,6 +114,12 @@ export default function MeProfile({ navigation }: Props) {
           rightColor: theme.success,
           icon: <ShieldIcon size={14} color={theme.blue} />,
           iconBg: theme.blueSoft,
+        },
+        {
+          label: 'Appearance',
+          icon: <SparkleIcon size={14} color={theme.blue} />,
+          iconBg: theme.blueSoft,
+          onPress: () => navigation.navigate('Appearance'),
         },
         {
           label: 'Help & support',
@@ -143,13 +145,17 @@ export default function MeProfile({ navigation }: Props) {
           style={[s.hero, { paddingTop: insets.top + 12 }]}>
           <View style={s.heroCircle} />
           <View style={s.heroRow}>
-            <LinearGradient
-              colors={[theme.blueSoft, theme.orangeSoft]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.avatar}>
-              <Text style={s.avatarText}>{initial}</Text>
-            </LinearGradient>
+            {me?.avatarUrl ? (
+              <Image source={{ uri: photoUri(me.avatarUrl) }} style={s.avatar} />
+            ) : (
+              <LinearGradient
+                colors={[theme.blueSoft, theme.orangeSoft]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.avatar}>
+                <Text style={s.avatarText}>{initial}</Text>
+              </LinearGradient>
+            )}
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={s.name} numberOfLines={1}>
                 {display}
@@ -163,7 +169,9 @@ export default function MeProfile({ navigation }: Props) {
                 </View>
               ) : null}
             </View>
-            <Pressable style={s.editBtn}>
+            <Pressable
+              style={s.editBtn}
+              onPress={() => navigation.navigate('EditProfile')}>
               <Text style={s.editBtnText}>Edit</Text>
             </Pressable>
           </View>

@@ -1,9 +1,18 @@
-import { useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useTranscribeVoice } from '../../api/queries';
 import { theme, FONT } from '../../theme';
 import { MinimalHeader } from '../../components/MinimalHeader';
 import {
@@ -12,7 +21,8 @@ import {
   RefreshIcon,
   SparkleIcon,
 } from '../../components/icons';
-import { useListingDraft } from './ListingDraftContext';
+import { useListingDraft, type VoiceCapture } from './ListingDraftContext';
+import { useApplyVoiceClassification } from './useApplyVoiceClassification';
 import { formatDuration, splitTranscript } from './voiceMock';
 import type { ListingStackParamList } from '../../navigation/types';
 
@@ -48,37 +58,118 @@ function PauseGlyph({ color }: { color: string }) {
   );
 }
 
+type Stage = 'idle' | 'transcribing' | 'done' | 'error';
+
 export default function VoiceTranscriptReview({ navigation }: Props) {
-  const { voice, patch } = useListingDraft();
+  const { voice, setVoice, patch } = useListingDraft();
   const insets = useSafeAreaInsets();
 
   const transcript = voice.transcript;
   const duration = voice.durationSec;
   const audioUri = voice.audioUri;
 
+  useApplyVoiceClassification(transcript);
+
+  const [stage, setStage] = useState<Stage>(() =>
+    voice.transcript ? 'done' : voice.audioUri ? 'transcribing' : 'idle',
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const voiceRef = useRef<VoiceCapture>(voice);
+  voiceRef.current = voice;
+
   const player = useAudioPlayer(audioUri ?? null);
-  const status = useAudioPlayerStatus(player);
+  const playerStatus = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    if (status.didJustFinish) {
+    if (playerStatus.didJustFinish) {
       player.seekTo(0);
     }
-  }, [status.didJustFinish, player]);
+  }, [playerStatus.didJustFinish, player]);
 
   const onTogglePlay = () => {
-    if (status.playing) {
+    if (playerStatus.playing) {
       player.pause();
     } else {
       player.play();
     }
   };
 
+  const transcribe = useTranscribeVoice();
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    if (stage !== 'transcribing' || !audioUri) return;
+    if (firedRef.current) return;
+    firedRef.current = true;
+
+    const controller = new AbortController();
+
+    transcribe.mutate(
+      { audioUri, signal: controller.signal },
+      {
+        onSuccess: ({ transcript: text }) => {
+          if (controller.signal.aborted) return;
+          const trimmed = text.trim();
+          if (!trimmed) {
+            setErrorMessage(
+              "We couldn't catch that. Try recording again or type the details on the next screen.",
+            );
+            setStage('error');
+            return;
+          }
+          setVoice({ ...voiceRef.current, transcript: trimmed });
+          setStage('done');
+        },
+        onError: () => {
+          if (controller.signal.aborted) return;
+          setErrorMessage(
+            'Transcription failed. Try recording again or type the details on the next screen.',
+          );
+          setStage('error');
+        },
+      },
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, [stage, audioUri]);
+
+  const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
+  useEffect(() => {
+    if (stage !== 'transcribing') return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonOpacity, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(skeletonOpacity, {
+          toValue: 0.45,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [stage, skeletonOpacity]);
+
+  const canUseTranscript = stage === 'done' && transcript.length > 0;
+
   // Polish and Use-as-is share behaviour in the UI-only scope.
   const fillFromTranscript = () => {
+    if (!canUseTranscript) return;
     const { title, description } = splitTranscript(transcript);
     patch({ title, description });
     navigation.navigate('ListingDetails');
   };
+
+  const onRetryRecord = () => navigation.navigate('ListingVoiceListening');
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -94,36 +185,60 @@ export default function VoiceTranscriptReview({ navigation }: Props) {
         showsVerticalScrollIndicator={false}>
         <View style={s.eyebrowRow}>
           <CheckIcon size={12} color={theme.orange} />
-          <Text style={s.eyebrow}>Got it</Text>
+          <Text style={s.eyebrow}>
+            {stage === 'transcribing'
+              ? 'Listening back'
+              : stage === 'error'
+                ? 'Hmm'
+                : 'Got it'}
+          </Text>
         </View>
-        <Text style={s.title}>Here's what we heard</Text>
+        <Text style={s.title}>
+          {stage === 'transcribing'
+            ? 'Turning it into words…'
+            : stage === 'error'
+              ? "Couldn't transcribe that"
+              : "Here's what we heard"}
+        </Text>
 
         <View style={s.transcriptCard}>
           <View style={s.transcriptTag}>
             <MicIcon size={9} color={theme.orange} />
             <Text style={s.transcriptTagText}>
-              Transcript · {formatDuration(duration)}
+              {stage === 'done' ? 'Transcript' : 'Recording'} · {formatDuration(duration)}
             </Text>
           </View>
-          <Text style={s.transcriptText}>"{transcript}"</Text>
+
+          {stage === 'transcribing' ? (
+            <View style={s.skeletonStack}>
+              <Animated.View style={[s.skeletonBar, { width: '92%', opacity: skeletonOpacity }]} />
+              <Animated.View style={[s.skeletonBar, { width: '78%', opacity: skeletonOpacity }]} />
+              <Animated.View style={[s.skeletonBar, { width: '55%', opacity: skeletonOpacity }]} />
+            </View>
+          ) : stage === 'error' ? (
+            <Text style={s.transcriptError}>{errorMessage}</Text>
+          ) : (
+            <Text style={s.transcriptText}>"{transcript}"</Text>
+          )}
+
           <View style={s.chipRow}>
             {audioUri ? (
               <Pressable
                 style={({ pressed }) => [s.reRecordChip, pressed && s.pressed]}
                 onPress={onTogglePlay}>
-                {status.playing ? (
+                {playerStatus.playing ? (
                   <PauseGlyph color={theme.inkDim} />
                 ) : (
                   <PlayGlyph color={theme.inkDim} />
                 )}
                 <Text style={s.reRecordText}>
-                  {status.playing ? 'Pause' : 'Play recording'}
+                  {playerStatus.playing ? 'Pause' : 'Play recording'}
                 </Text>
               </Pressable>
             ) : null}
             <Pressable
               style={({ pressed }) => [s.reRecordChip, pressed && s.pressed]}
-              onPress={() => navigation.navigate('ListingVoiceListening')}>
+              onPress={onRetryRecord}>
               <RefreshIcon size={11} color={theme.inkDim} />
               <Text style={s.reRecordText}>Re-record</Text>
             </Pressable>
@@ -133,8 +248,13 @@ export default function VoiceTranscriptReview({ navigation }: Props) {
         <Text style={s.sectionLabel}>What next?</Text>
 
         <Pressable
-          style={({ pressed }) => [s.actionCard, pressed && s.pressed]}
-          onPress={fillFromTranscript}>
+          style={({ pressed }) => [
+            s.actionCard,
+            pressed && s.pressed,
+            !canUseTranscript && s.actionCardDisabled,
+          ]}
+          onPress={fillFromTranscript}
+          disabled={!canUseTranscript}>
           <View style={[s.iconPlate, { backgroundColor: theme.blueSoft }]}>
             <PolishGlyph color={theme.blue} />
           </View>
@@ -145,8 +265,13 @@ export default function VoiceTranscriptReview({ navigation }: Props) {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [s.actionCard, pressed && s.pressed]}
-          onPress={fillFromTranscript}>
+          style={({ pressed }) => [
+            s.actionCard,
+            pressed && s.pressed,
+            !canUseTranscript && s.actionCardDisabled,
+          ]}
+          onPress={fillFromTranscript}
+          disabled={!canUseTranscript}>
           <View style={[s.iconPlate, { backgroundColor: theme.orangeSoft }]}>
             <CheckIcon size={14} color={theme.orange} />
           </View>
@@ -157,8 +282,13 @@ export default function VoiceTranscriptReview({ navigation }: Props) {
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [s.actionCardPrimary, pressed && s.pressed]}
-          onPress={() => navigation.navigate('ListingVoiceSuggestions')}>
+          style={({ pressed }) => [
+            s.actionCardPrimary,
+            pressed && s.pressed,
+            !canUseTranscript && s.actionCardDisabled,
+          ]}
+          onPress={() => navigation.navigate('ListingVoiceSuggestions')}
+          disabled={!canUseTranscript}>
           <View style={s.recommendedPill}>
             <Text style={s.recommendedText}>Recommended</Text>
           </View>
@@ -244,6 +374,22 @@ const s = StyleSheet.create({
     lineHeight: 22,
     color: theme.ink,
     marginTop: 4,
+  },
+  transcriptError: {
+    fontFamily: FONT.regular,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: theme.inkDim,
+    marginTop: 4,
+  },
+  skeletonStack: {
+    marginTop: 8,
+    gap: 8,
+  },
+  skeletonBar: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.line,
   },
   chipRow: {
     marginTop: 12,
@@ -354,4 +500,5 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
   },
   pressed: { opacity: 0.7 },
+  actionCardDisabled: { opacity: 0.4 },
 });

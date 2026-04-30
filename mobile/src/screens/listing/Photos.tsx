@@ -7,7 +7,7 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { CloseIcon, PlusIcon, InfoIcon } from '../../components/icons';
 import { useListingDraft } from './ListingDraftContext';
-import { pickPhotoFromLibrary } from './photoPicker';
+import { pickPhotosFromLibrary } from './photoPicker';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingPhotos'>;
@@ -22,12 +22,13 @@ export default function ListingPhotos({ navigation }: Props) {
 
   const pick = useCallback(async () => {
     if (picking) return;
-    if (photos.length >= TOTAL_SLOTS) return;
+    const remaining = TOTAL_SLOTS - photos.length;
+    if (remaining <= 0) return;
 
     setPicking(true);
     try {
-      const processed = await pickPhotoFromLibrary();
-      if (processed) patch({ photos: [...photos, processed] });
+      const picked = await pickPhotosFromLibrary(remaining);
+      if (picked.length) patch({ photos: [...photos, ...picked] });
     } catch (e) {
       Alert.alert('Photo picker error', String((e as Error).message ?? e));
     } finally {

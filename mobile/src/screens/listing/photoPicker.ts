@@ -42,3 +42,18 @@ export async function pickPhotoFromLibrary(): Promise<LocalPhoto | null> {
   if (result.canceled || result.assets.length === 0) return null;
   return processAsset(result.assets[0]);
 }
+
+export async function pickPhotosFromLibrary(selectionLimit: number): Promise<LocalPhoto[]> {
+  if (selectionLimit <= 0) return [];
+  if (selectionLimit === 1) {
+    const p = await pickPhotoFromLibrary();
+    return p ? [p] : [];
+  }
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: 'images',
+    allowsMultipleSelection: true,
+    selectionLimit,
+  });
+  if (result.canceled || result.assets.length === 0) return [];
+  return Promise.all(result.assets.map(processAsset));
+}

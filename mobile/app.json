@@ -45,12 +45,6 @@
         "projectId": "705f7f7d-b153-4b64-a8ca-6d488addaded"
       }
     },
-    "owner": "k3r3m",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/705f7f7d-b153-4b64-a8ca-6d488addaded"
-    }
+    "owner": "k3r3m"
   }
 }

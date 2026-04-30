@@ -26,7 +26,11 @@ public static class ListingProjections
                 Id = l.Seller.Id,
                 Handle = l.Seller.Handle,
                 Name = l.Seller.Name,
-                AvatarUrl = l.Seller.AvatarUrl,
+                AvatarUrl = l.Seller.AvatarUrl == null
+                    ? null
+                    : (l.Seller.AvatarUrl.StartsWith("http")
+                        ? l.Seller.AvatarUrl
+                        : "/uploads/" + l.Seller.AvatarUrl),
                 AvatarInitial = l.Seller.AvatarInitial,
                 IsVerified = l.Seller.IsVerified == 1,
                 JoinedYear = l.Seller.JoinedYear,

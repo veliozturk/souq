@@ -59,6 +59,8 @@ builder.Services.AddRateLimiter(o =>
     });
 });
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddOpenApi();
 
 builder.Services

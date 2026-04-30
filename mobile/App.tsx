@@ -17,12 +17,12 @@ import { theme } from './src/theme';
 
 const queryClient = new QueryClient();
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: theme.bg },
-};
-
 export default function App() {
+  const navTheme = {
+    ...DefaultTheme,
+    colors: { ...DefaultTheme.colors, background: theme.bg },
+  };
+
   const [fontsLoaded] = useFonts({
     'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
     'PlusJakartaSans-Medium': PlusJakartaSans_500Medium,

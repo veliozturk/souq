@@ -48,6 +48,9 @@ export type MeStackParamList = {
   ListingAdmin: { id: string };
   EditListing: { id: string };
   EditPhotos: { id: string };
+  Appearance: undefined;
+  EditProfile: undefined;
+  LocationPicker: undefined;
 };
 
 // Bottom tabs

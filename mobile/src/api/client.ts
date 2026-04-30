@@ -68,6 +68,7 @@ export async function apiMultipartPost<T>(
   path: string,
   files: MultipartFile[],
   fieldName = 'files',
+  signal?: AbortSignal,
 ): Promise<T> {
   const form = new FormData();
   for (const f of files) {
@@ -77,6 +78,7 @@ export async function apiMultipartPost<T>(
     method: 'POST',
     headers: authHeaders(),
     body: form,
+    signal,
   });
   const text = await res.text().catch(() => '');
   if (!res.ok) {

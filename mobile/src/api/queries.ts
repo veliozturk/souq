@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiDelete, apiGet, apiPost, apiPatch, apiMultipartPost, type MultipartFile } from './client';
 import { useAuthStub } from '../auth/AuthStub';
 import type {
@@ -26,6 +26,7 @@ import type {
   QuickReply,
   UserDetail,
 } from './types';
+import type { VoiceSuggestion } from '../screens/listing/voiceMock';
 
 export type EditPhotoItem =
   | { kind: 'remote'; photo: ListingPhoto }
@@ -250,13 +251,13 @@ export function useUpdateHomeNeighborhood() {
   const qc = useQueryClient();
   const { currentUser, updateMe } = useAuthStub();
 
-  return (neighborhood: { id: string; slug: string; name: { en: string; ar: string } }) => {
+  return (neighborhood: { id: string; slug: string; name: { en: string; ar: string } } | null) => {
     if (!currentUser) return;
 
     updateMe({ homeNeighborhood: neighborhood });
 
     apiPatch<Me>(`/api/me?userId=${currentUser.id}`, {
-      homeNeighborhoodId: neighborhood.id,
+      homeNeighborhoodId: neighborhood?.id ?? null,
     })
       .then((me) => {
         qc.setQueryData(['me', currentUser.id], me);
@@ -264,6 +265,54 @@ export function useUpdateHomeNeighborhood() {
       .finally(() => {
         qc.invalidateQueries({ queryKey: ['listings'] });
       });
+  };
+}
+
+export type UpdateMeBody = {
+  displayName?: string;
+  handle?: string;
+};
+
+export function useUpdateMe() {
+  const qc = useQueryClient();
+  const { currentUser, updateMe } = useAuthStub();
+
+  return async (body: UpdateMeBody): Promise<Me> => {
+    if (!currentUser) throw new Error('not_authenticated');
+    const me = await apiPatch<Me>(`/api/me?userId=${currentUser.id}`, body);
+    qc.setQueryData(['me', currentUser.id], me);
+    updateMe({
+      displayName: me.displayName,
+      handle: me.handle,
+      avatarInitial: me.avatarInitial,
+      avatarUrl: me.avatarUrl,
+    });
+    return me;
+  };
+}
+
+export function useUpdateAvatar() {
+  const qc = useQueryClient();
+  const { currentUser, updateMe } = useAuthStub();
+
+  return async (photo: LocalPhoto): Promise<Me> => {
+    if (!currentUser) throw new Error('not_authenticated');
+    const ext = photo.mime === 'image/png' ? 'png'
+      : photo.mime === 'image/webp' ? 'webp'
+      : 'jpg';
+    const file: MultipartFile = {
+      uri: photo.uri,
+      name: `avatar.${ext}`,
+      type: photo.mime,
+    };
+    const me = await apiMultipartPost<Me>(
+      `/api/me/avatar?userId=${currentUser.id}`,
+      [file],
+      'file',
+    );
+    qc.setQueryData(['me', currentUser.id], me);
+    updateMe({ avatarUrl: me.avatarUrl, avatarInitial: me.avatarInitial });
+    return me;
   };
 }
 
@@ -793,4 +842,46 @@ export function useDecideOffer() {
       qc.invalidateQueries({ queryKey: ['offers', me.id] });
     });
   };
+}
+
+export function useVoiceSuggestions(transcript: string) {
+  return useQuery({
+    queryKey: ['voice-suggestions', transcript],
+    queryFn: () =>
+      apiPost<{ suggestions: VoiceSuggestion[] }>('/api/voice/suggestions', { transcript }),
+    enabled: transcript.trim().length > 0,
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+export function useClassifyVoice(transcript: string) {
+  return useQuery({
+    queryKey: ['voice-classify', transcript],
+    queryFn: () =>
+      apiPost<{
+        categorySlug: string | null;
+        conditionSlug: string | null;
+        priceAed: number | null;
+      }>('/api/voice/classify', { transcript }),
+    enabled: transcript.trim().length > 0,
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+export function useTranscribeVoice() {
+  return useMutation({
+    mutationFn: ({ audioUri, signal }: { audioUri: string; signal?: AbortSignal }) => {
+      const ext = audioUri.split('.').pop()?.toLowerCase() ?? 'm4a';
+      const mime =
+        ext === 'wav' ? 'audio/wav' : ext === 'mp4' ? 'audio/mp4' : 'audio/m4a';
+      return apiMultipartPost<{ transcript: string }>(
+        '/api/voice/transcribe',
+        [{ uri: audioUri, name: `recording.${ext}`, type: mime }],
+        'file',
+        signal,
+      );
+    },
+  });
 }

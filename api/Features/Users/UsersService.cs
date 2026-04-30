@@ -57,7 +57,9 @@ public sealed class UsersService(SouqDbContext db)
             id = u.Id,
             handle = u.Handle,
             displayName = u.Name,
-            avatarUrl = u.AvatarUrl,
+            avatarUrl = u.AvatarUrl == null
+                ? null
+                : (u.AvatarUrl.StartsWith("http") ? u.AvatarUrl : "/uploads/" + u.AvatarUrl),
             avatarInitial = u.AvatarInitial,
             isVerified = u.IsVerified == 1,
             ratingAvg = (decimal?)null,

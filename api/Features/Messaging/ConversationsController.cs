@@ -57,7 +57,9 @@ public sealed class ConversationsController(SouqDbContext db) : ControllerBase
             {
                 id = r.peer.Id,
                 displayName = r.peer.Name,
-                avatarUrl = r.peer.AvatarUrl,
+                avatarUrl = r.peer.AvatarUrl is null
+                    ? null
+                    : (r.peer.AvatarUrl.StartsWith("http") ? r.peer.AvatarUrl : "/uploads/" + r.peer.AvatarUrl),
                 avatarInitial = r.peer.AvatarInitial,
                 isOnline = false,
             },

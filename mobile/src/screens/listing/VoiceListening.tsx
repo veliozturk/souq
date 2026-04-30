@@ -18,12 +18,13 @@ import {
 import { theme, FONT } from '../../theme';
 import { CloseIcon } from '../../components/icons';
 import { useListingDraft } from './ListingDraftContext';
-import { MOCK_TRANSCRIPT, formatDuration } from './voiceMock';
+import { formatDuration } from './voiceMock';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingVoiceListening'>;
 
 const BAR_COUNT = 32;
+const MAX_DURATION_SEC = 20;
 
 function baseHeights(): number[] {
   return Array.from({ length: BAR_COUNT }, (_, i) => {
@@ -44,6 +45,8 @@ export default function VoiceListening({ navigation }: Props) {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const committedRef = useRef(false);
   const halo = useRef(new Animated.Value(0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
+  const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -51,11 +54,6 @@ export default function VoiceListening({ navigation }: Props) {
     }, 90);
     return () => clearInterval(id);
   }, [base]);
-
-  useEffect(() => {
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -80,6 +78,8 @@ export default function VoiceListening({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    let tickId: ReturnType<typeof setInterval> | null = null;
+    let listenerId: string | null = null;
     (async () => {
       const { granted } = await requestRecordingPermissionsAsync();
       if (cancelled) return;
@@ -89,10 +89,24 @@ export default function VoiceListening({ navigation }: Props) {
       }
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
+      if (cancelled) return;
       recorder.record();
+      tickId = setInterval(() => setSeconds((s) => s + 1), 1000);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: MAX_DURATION_SEC * 1000,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }).start();
+      listenerId = progress.addListener(({ value }) => {
+        if (value >= 1) stopRef.current();
+      });
     })();
     return () => {
       cancelled = true;
+      if (tickId) clearInterval(tickId);
+      progress.stopAnimation();
+      if (listenerId) progress.removeListener(listenerId);
       if (!committedRef.current) {
         recorder.stop().catch(() => {});
       }
@@ -104,12 +118,16 @@ export default function VoiceListening({ navigation }: Props) {
     committedRef.current = true;
     await recorder.stop().catch(() => {});
     setVoice({
-      transcript: MOCK_TRANSCRIPT,
+      transcript: '',
       durationSec: seconds,
       audioUri: recorder.uri ?? undefined,
     });
     navigation.replace('ListingVoiceTranscript');
   };
+
+  useEffect(() => {
+    stopRef.current = onStop;
+  });
 
   const onCancel = () => navigation.goBack();
 
@@ -147,6 +165,20 @@ export default function VoiceListening({ navigation }: Props) {
             const px = Math.max(8, h * 68 * jitter[i]);
             return <View key={i} style={[s.bar, { height: px }]} />;
           })}
+        </View>
+
+        <View style={s.progressTrack}>
+          <Animated.View
+            style={[
+              s.progressFill,
+              {
+                width: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }),
+              },
+            ]}
+          />
         </View>
 
         <Text style={s.timer}>{formatDuration(seconds)}</Text>
@@ -264,6 +296,19 @@ const s = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: theme.orange,
     opacity: 0.85,
+  },
+  progressTrack: {
+    marginTop: 12,
+    marginBottom: 4,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: theme.line,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.orange,
+    borderRadius: 2,
   },
   timer: {
     fontFamily: FONT.regular,

@@ -36,7 +36,6 @@ export default function Notifications({ navigation }: Props) {
             <ChevronLeftIcon size={9} />
           </Pressable>
           <Text style={s.title}>Notifications</Text>
-          <View style={s.backBtn} />
         </View>
       </View>
 
@@ -94,7 +93,7 @@ const s = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   backBtn: {
     width: 38,

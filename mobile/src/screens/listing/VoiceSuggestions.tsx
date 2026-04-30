@@ -15,14 +15,12 @@ import { MinimalHeader } from '../../components/MinimalHeader';
 import { PrimaryBtn } from '../../components/PrimaryBtn';
 import { CheckIcon, RefreshIcon, SparkleIcon } from '../../components/icons';
 import { useListingDraft } from './ListingDraftContext';
-import { FALLBACK_SUGGESTIONS, type VoiceSuggestion } from './voiceMock';
+import { useApplyVoiceClassification } from './useApplyVoiceClassification';
+import { FALLBACK_SUGGESTIONS } from './voiceMock';
+import { useVoiceSuggestions } from '../../api/queries';
 import type { ListingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<ListingStackParamList, 'ListingVoiceSuggestions'>;
-
-type LoadState = 'loading' | 'ready';
-
-const LOADING_MS = 700;
 
 function SkeletonCard({ shimmer }: { shimmer: Animated.Value }) {
   const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.55] });
@@ -60,31 +58,21 @@ const ss = StyleSheet.create({
 });
 
 export default function VoiceSuggestions({ navigation }: Props) {
-  const { patch } = useListingDraft();
+  const { voice, patch } = useListingDraft();
   const insets = useSafeAreaInsets();
 
-  const [state, setState] = useState<LoadState>('loading');
-  const [suggestions, setSuggestions] = useState<VoiceSuggestion[]>([]);
+  useApplyVoiceClassification(voice.transcript);
+
+  const query = useVoiceSuggestions(voice.transcript);
+  const suggestions =
+    query.data?.suggestions ?? (query.isError ? FALLBACK_SUGGESTIONS : []);
+  const showSkeleton = suggestions.length === 0 || query.isFetching;
+
   const [selected, setSelected] = useState(0);
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    let cancelled = false;
-    setState('loading');
-    const t = setTimeout(() => {
-      if (cancelled) return;
-      setSuggestions(FALLBACK_SUGGESTIONS);
-      setState('ready');
-    }, LOADING_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-    // re-runs when refreshNonce changes
-  }, []);
-
-  useEffect(() => {
-    if (state !== 'loading') return;
+    if (!showSkeleton) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(shimmer, {
@@ -103,14 +91,10 @@ export default function VoiceSuggestions({ navigation }: Props) {
     );
     loop.start();
     return () => loop.stop();
-  }, [state, shimmer]);
+  }, [showSkeleton, shimmer]);
 
   const onRefresh = () => {
-    setState('loading');
-    setTimeout(() => {
-      setSuggestions(FALLBACK_SUGGESTIONS);
-      setState('ready');
-    }, LOADING_MS);
+    query.refetch();
   };
 
   const onUseThis = () => {
@@ -139,7 +123,7 @@ export default function VoiceSuggestions({ navigation }: Props) {
         <Text style={s.title}>Pick one — or edit after</Text>
         <Text style={s.subhead}>Three rewrites of your recording, with different tones.</Text>
 
-        {state === 'loading' && (
+        {showSkeleton && (
           <View style={s.list}>
             <SkeletonCard shimmer={shimmer} />
             <SkeletonCard shimmer={shimmer} />
@@ -148,7 +132,7 @@ export default function VoiceSuggestions({ navigation }: Props) {
           </View>
         )}
 
-        {state === 'ready' && (
+        {!showSkeleton && (
           <View style={s.list}>
             {suggestions.map((sug, i) => {
               const active = selected === i;
@@ -186,7 +170,7 @@ export default function VoiceSuggestions({ navigation }: Props) {
           <RefreshIcon size={16} color={theme.inkDim} />
         </Pressable>
         <View style={s.flex}>
-          <PrimaryBtn onPress={onUseThis} disabled={state !== 'ready'}>
+          <PrimaryBtn onPress={onUseThis} disabled={showSkeleton || suggestions.length === 0}>
             Use this one
           </PrimaryBtn>
         </View>

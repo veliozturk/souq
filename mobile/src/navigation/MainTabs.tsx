@@ -90,7 +90,10 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
   if (
     activeRoute.name === 'MeTab' &&
-    (nestedRouteName === 'EditListing' || nestedRouteName === 'EditPhotos')
+    (nestedRouteName === 'EditListing' ||
+      nestedRouteName === 'EditPhotos' ||
+      nestedRouteName === 'EditProfile' ||
+      nestedRouteName === 'LocationPicker')
   ) {
     return null;
   }

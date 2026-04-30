@@ -85,7 +85,11 @@ public sealed class ListingsController(SouqDbContext db) : ControllerBase
                     id = l.Seller.Id,
                     handle = l.Seller.Handle,
                     name = l.Seller.Name,
-                    avatarUrl = l.Seller.AvatarUrl,
+                    avatarUrl = l.Seller.AvatarUrl == null
+                        ? null
+                        : (l.Seller.AvatarUrl.StartsWith("http")
+                            ? l.Seller.AvatarUrl
+                            : "/uploads/" + l.Seller.AvatarUrl),
                     avatarInitial = l.Seller.AvatarInitial,
                     isVerified = l.Seller.IsVerified == 1,
                     joinedYear = l.Seller.JoinedYear,
